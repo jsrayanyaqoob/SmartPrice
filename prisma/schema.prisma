@@ -1,0 +1,153 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String         @id @default(uuid())
+  name         String?
+  email        String         @unique
+  passwordHash String
+  role         Role           @default(Customer)
+  plan         Plan           @default(FREE)
+  avatarUrl    String?
+  isActive     Boolean        @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  searchHistory SearchHistory[]
+  wishlist      Wishlist[]
+  chatHistory   ChatHistory[]
+  priceAlerts   PriceAlert[]
+
+  @@index([email])
+}
+
+model Product {
+  id           String         @id @default(uuid())
+  name         String
+  title        String
+  brand        String?
+  category     String?
+  description  String?        @db.Text
+  imageUrl     String?
+  sku          String?        @unique
+  externalId   String?        @unique
+  slug         String         @unique
+  price        Float          @default(0)
+  currency     String         @default("USD")
+  rating       Float          @default(0)
+  sourceUrl    String?
+  metadata     Json?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @default(now()) @updatedAt
+
+  productPrices ProductPrice[]
+  wishlist      Wishlist[]
+  priceAlerts   PriceAlert[]
+  searchHistory SearchHistory[]
+
+  @@index([category])
+  @@index([brand])
+  @@index([slug])
+}
+
+model ProductPrice {
+  id           String   @id @default(uuid())
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  storeName    String
+  storeUrl     String?
+  price        Float
+  currency     String   @default("USD")
+  availability String   @default("in_stock")
+  scrapedAt    DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+
+  @@index([productId, scrapedAt])
+  @@index([storeName])
+  @@index([price])
+}
+
+model SearchHistory {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  query     String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([query])
+}
+
+model Wishlist {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@unique([userId, productId])
+  @@index([userId])
+}
+
+model ChatHistory {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  role      ChatRole
+  message   String   @db.Text
+  response  String?  @db.Text
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model PriceAlert {
+  id           String      @id @default(uuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId    String
+  product      Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  targetPrice  Float
+  currentPrice Float
+  status       AlertStatus @default(ACTIVE)
+  notifyEmail  Boolean     @default(true)
+  notifyPush   Boolean     @default(true)
+  notifySMS    Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+enum Role {
+  Admin
+  Customer
+}
+
+enum Plan {
+  FREE
+  PRO
+}
+
+enum AlertStatus {
+  ACTIVE
+  REACHED
+  EXPIRED
+}
+
+enum ChatRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
