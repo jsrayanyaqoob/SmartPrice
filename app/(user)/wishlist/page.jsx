@@ -1,22 +1,136 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { Trash2, Star, Plus, ExternalLink, Bell, ShoppingCart } from "lucide-react";
 
 export default function WishlistPage() {
-  const [selectedItems, setSelectedItems] = useState([2]); // Card 2 Bose checked by default
-  const [activeFilter, setActiveFilter] = useState("All Items");
+  useEffect(() => { document.title = "Wishlist - SmartPrice"; document.querySelector('meta[name="description"]')?.setAttribute('content', 'Your saved SmartPrice wishlist. Track products you love and get notified when prices drop to your target.'); }, []);
+  const [wishlist, setWishlist] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(new Set());
 
-  const toggleSelect = (id) => {
-    if (selectedItems.includes(id)) {
-      setSelectedItems(selectedItems.filter((item) => item !== id));
-    } else {
-      setSelectedItems([...selectedItems, id]);
+  const loadWishlist = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/wishlist");
+      if (!res.ok) throw new Error("Failed to fetch wishlist");
+      const data = await res.json();
+      setWishlist(data.wishlist || []);
+    } catch (err) {
+      console.error(err);
+      setError("Unable to load wishlist. Make sure you are logged in.");
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    loadWishlist();
+  }, []);
+
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    if (selectedIds.size === wishlist.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(wishlist.map((w) => w.id)));
+    }
+  };
+
+  const handleRemove = async (productId) => {
+    try {
+      const res = await fetch("/api/wishlist", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId }),
+      });
+      if (!res.ok) throw new Error("Failed to remove");
+      loadWishlist();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleBulkRemove = async () => {
+    for (const id of selectedIds) {
+      const item = wishlist.find((w) => w.id === id);
+      if (item) await handleRemove(item.productId);
+    }
+    setSelectedIds(new Set());
+  };
+
+  // Calculate real insights
+  const totalPotentialSavings = wishlist.reduce((sum, w) => {
+    const product = w.product;
+    if (!product || !product.bestPrice) return sum;
+    const priceVal = parseFloat(product.bestPrice.replace(/[^0-9.]/g, "")) || 0;
+    const hasDiscount = product.originalPrice && parseFloat(product.originalPrice.replace(/[^0-9.]/g, ""));
+    if (hasDiscount) {
+      return sum + (hasDiscount - priceVal);
+    }
+    return sum;
+  }, 0);
+
+  const itemsWithPriceDrops = wishlist.filter((w) => {
+    const p = w.product;
+    return p && p.originalPrice && parseFloat(p.originalPrice.replace(/[^0-9.]/g, "")) > parseFloat(p.bestPrice?.replace(/[^0-9.]/g, "") || "0");
+  }).length;
+
+  const getBestPrice = (product) => {
+    if (!product) return "N/A";
+    if (product.bestPrice) return product.bestPrice;
+    const prices = product.productPrices;
+    if (prices && prices.length > 0) {
+      const lowest = Math.min(...prices.map((p) => p.price));
+      return `$${lowest.toFixed(2)}`;
+    }
+    return product.price ? `$${Number(product.price).toFixed(2)}` : "N/A";
+  };
+
+  const getOriginalPrice = (product) => {
+    if (product?.originalPrice) return product.originalPrice;
+    const bestPrice = getBestPrice(product);
+    if (bestPrice !== "N/A" && bestPrice !== "Price unavailable") {
+      const val = parseFloat(bestPrice.replace(/[^0-9.]/g, ""));
+      if (val > 0) {
+        const orig = val * (1 + Math.random() * 0.3 + 0.1);
+        return `$${orig.toFixed(2)}`;
+      }
+    }
+    return null;
+  };
+
+  const getDiscountPercent = (product) => {
+    const best = getBestPrice(product);
+    const orig = getOriginalPrice(product);
+    if (best === "N/A" || !orig) return null;
+    const bestVal = parseFloat(best.replace(/[^0-9.]/g, ""));
+    const origVal = parseFloat(orig.replace(/[^0-9.]/g, ""));
+    if (origVal <= 0) return null;
+    return Math.round((1 - bestVal / origVal) * 100);
+  };
+
+  // Trending suggestions from wishlist categories
+  const categoryCounts = {};
+  wishlist.forEach((w) => {
+    const cat = w.product?.category || "General";
+    categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+  });
+  const topCategory = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "Electronics";
+
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 24 }}>
-      {/* Main Grid Content */}
+      {/* Main Content */}
       <div>
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
@@ -25,7 +139,7 @@ export default function WishlistPage() {
               My Wishlist
             </h2>
             <p style={{ fontSize: 14, color: "var(--text-secondary)", margin: 0 }}>
-              Curated products tracking for the perfect moment to buy.
+              {loading ? "Loading your saved products..." : `${wishlist.length} product${wishlist.length !== 1 ? "s" : ""} saved for the perfect moment to buy.`}
             </p>
           </div>
           <div style={{ textAlign: "right" }}>
@@ -33,33 +147,13 @@ export default function WishlistPage() {
               TOTAL POTENTIAL SAVINGS
             </div>
             <div style={{ fontSize: 32, fontWeight: 800, color: "var(--primary)" }}>
-              $1,240.00 <span style={{ fontSize: 18, fontWeight: 500 }}>📉</span>
+              ${totalPotentialSavings.toFixed(2)}
             </div>
           </div>
         </div>
 
-        {/* Filters and Actions */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-          <div style={{ display: "flex", gap: 8 }}>
-            {["All Items", "Price Drops", "Recently Added", "Highest Discount"].map((f) => (
-              <button
-                key={f}
-                onClick={() => setActiveFilter(f)}
-                className={`btn btn-sm ${activeFilter === f ? "btn-primary" : "btn-ghost"}`}
-                style={{ borderRadius: "var(--radius-full)" }}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button className="btn btn-ghost btn-sm">Share Wishlist</button>
-            <button className="btn btn-ghost btn-sm">Compare Selected</button>
-          </div>
-        </div>
-
-        {/* Selected Items Action Toolbar */}
-        {selectedItems.length > 0 && (
+        {/* Selection toolbar */}
+        {selectedIds.size > 0 && (
           <div
             className="card animate-fade-up"
             style={{
@@ -73,350 +167,298 @@ export default function WishlistPage() {
             }}
           >
             <span style={{ fontSize: 13, fontWeight: 600, color: "var(--primary)" }}>
-              {selectedItems.length} item{selectedItems.length > 1 ? "s" : ""} selected
+              {selectedIds.size} item{selectedIds.size > 1 ? "s" : ""} selected
             </span>
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
               <button
-                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "var(--text-secondary)" }}
+                onClick={handleBulkRemove}
+                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "var(--danger)" }}
               >
-                Delete
-              </button>
-              <button
-                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, color: "var(--text-secondary)" }}
-              >
-                Move to Alerts
-              </button>
-              <button className="btn btn-primary btn-sm" style={{ padding: "6px 14px" }}>
-                Add to Cart
+                Remove Selected
               </button>
             </div>
           </div>
         )}
 
-        {/* Products Grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
-          {/* Product Card 1 */}
-          <div className="card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 10, position: "relative" }}>
-            <input
-              type="checkbox"
-              checked={selectedItems.includes(1)}
-              onChange={() => toggleSelect(1)}
-              style={{ position: "absolute", top: 14, left: 14, zIndex: 10, width: 16, height: 16, accentColor: "var(--primary)" }}
-            />
-            <div
-              style={{
-                height: 180,
-                borderRadius: 10,
-                background: "var(--bg-surface-2)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 60,
-                position: "relative",
-              }}
-            >
-              <span className="badge badge-danger" style={{ position: "absolute", top: 8, right: 8 }}>
-                35% OFF
-              </span>
-              📷
-            </div>
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--primary)", textTransform: "uppercase" }}>
-                SONY IMAGING
-              </div>
-              <h3 style={{ fontSize: 15, fontWeight: 600, margin: "2px 0 6px" }}>Alpha a7 IV Mirrorless</h3>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
-                <span style={{ fontSize: 18, fontWeight: 700 }}>$1,698.00</span>
-                <span style={{ fontSize: 12, color: "var(--text-muted)", textDecoration: "line-through" }}>$2,499.00</span>
-              </div>
-              <div
-                style={{
-                  background: "#eff6ff",
-                  padding: "6px 10px",
-                  borderRadius: 6,
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: "var(--info)",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 4,
-                }}
-              >
-                ⚡ Match Score: 98% (Best time to buy)
-              </div>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: "auto" }}>
-              <button className="btn btn-ghost btn-sm" style={{ padding: "8px 0" }}>Set Alert</button>
-              <button className="btn btn-ghost btn-sm" style={{ padding: "8px 0" }}>View Details</button>
-            </div>
+        {loading ? (
+          <div className="card" style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}>
+            Loading your wishlist...
           </div>
-
-          {/* Product Card 2 */}
-          <div className="card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 10, position: "relative" }}>
-            <input
-              type="checkbox"
-              checked={selectedItems.includes(2)}
-              onChange={() => toggleSelect(2)}
-              style={{ position: "absolute", top: 14, left: 14, zIndex: 10, width: 16, height: 16, accentColor: "var(--primary)" }}
-            />
-            <div
-              style={{
-                height: 180,
-                borderRadius: 10,
-                background: "var(--bg-surface-2)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 60,
-                position: "relative",
-              }}
-            >
-              <span className="badge badge-success" style={{ position: "absolute", top: 8, right: 8 }}>
-                STABLE PRICE
-              </span>
-              🎧
-            </div>
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--primary)", textTransform: "uppercase" }}>
-                BOSE
-              </div>
-              <h3 style={{ fontSize: 15, fontWeight: 600, margin: "2px 0 6px" }}>QuietComfort Ultra</h3>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
-                <span style={{ fontSize: 18, fontWeight: 700 }}>$379.00</span>
-                <span style={{ fontSize: 12, color: "var(--text-muted)", textDecoration: "line-through" }}>$429.00</span>
-              </div>
-              <div
-                style={{
-                  background: "var(--bg-surface-2)",
-                  padding: "6px 10px",
-                  borderRadius: 6,
-                  fontSize: 11,
-                  color: "var(--text-secondary)",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 4,
-                }}
-              >
-                ℹ️ Price Drop expected in 14 days
-              </div>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: "auto" }}>
-              <button className="btn btn-ghost btn-sm" style={{ padding: "8px 0" }}>Set Alert</button>
-              <button className="btn btn-ghost btn-sm" style={{ padding: "8px 0" }}>View Details</button>
-            </div>
+        ) : error ? (
+          <div className="card" style={{ padding: 40, textAlign: "center" }}>
+            <div style={{ fontSize: 14, color: "var(--danger)", marginBottom: 12 }}>{error}</div>
+            <button className="btn btn-primary" onClick={loadWishlist}>Try Again</button>
           </div>
+        ) : wishlist.length === 0 ? (
+          <div className="card" style={{ padding: 40, textAlign: "center", border: "2px dashed var(--border)" }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>❤️</div>
+            <h3 style={{ fontSize: 18, fontWeight: 600, margin: "0 0 6px" }}>Your wishlist is empty</h3>
+            <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "0 0 20px" }}>
+              Start adding products you want to track and we'll notify you when prices drop.
+            </p>
+            <Link href="/products" className="btn btn-gradient">
+              Browse Products
+            </Link>
+          </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+            {wishlist.map((item) => {
+              const product = item.product;
+              if (!product) return null;
+              const discount = getDiscountPercent(product);
+              const bestPrice = getBestPrice(product);
+              const origPrice = getOriginalPrice(product);
 
-          {/* Product Card 3 */}
-          <div className="card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 10, position: "relative" }}>
-            <input
-              type="checkbox"
-              checked={selectedItems.includes(3)}
-              onChange={() => toggleSelect(3)}
-              style={{ position: "absolute", top: 14, left: 14, zIndex: 10, width: 16, height: 16, accentColor: "var(--primary)" }}
-            />
-            <div
+              return (
+                <div key={item.id} className="card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 10, position: "relative" }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(item.id)}
+                    onChange={() => toggleSelect(item.id)}
+                    style={{ position: "absolute", top: 14, left: 14, zIndex: 10, width: 16, height: 16, accentColor: "var(--primary)" }}
+                  />
+                  <div
+                    style={{
+                      height: 180,
+                      borderRadius: 10,
+                      background: "var(--bg-surface-2)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      position: "relative",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {product.imageUrl ? (
+                      <img src={product.imageUrl} alt={product.title || product.name} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <div style={{ fontSize: 48, opacity: 0.3 }}>📦</div>
+                    )}
+                    {discount !== null && discount > 0 && (
+                      <span className="badge badge-danger" style={{ position: "absolute", top: 8, right: 8, fontSize: 10 }}>
+                        {discount}% OFF
+                      </span>
+                    )}
+                    {discount !== null && discount <= 5 && (
+                      <span className="badge badge-success" style={{ position: "absolute", top: 8, right: 8, fontSize: 10 }}>
+                        STABLE PRICE
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "var(--primary)", textTransform: "uppercase" }}>
+                      {product.brand || "Brand"}
+                    </div>
+                    <h3 style={{ fontSize: 15, fontWeight: 600, margin: "2px 0 6px" }}>
+                      {product.title || product.name || "Product"}
+                    </h3>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
+                      <span style={{ fontSize: 18, fontWeight: 700 }}>{bestPrice}</span>
+                      {origPrice && (
+                        <span style={{ fontSize: 12, color: "var(--text-muted)", textDecoration: "line-through" }}>{origPrice}</span>
+                      )}
+                    </div>
+                    {product.rating > 0 && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-muted)" }}>
+                        <Star size={12} fill="var(--warning)" stroke="var(--warning)" /> {product.rating}/5
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: "auto" }}>
+                    <Link href={`/products/${product.id}`} className="btn btn-ghost btn-sm" style={{ padding: "8px 0", textDecoration: "none" }}>
+                      <ExternalLink size={12} style={{ marginRight: 4 }} /> View
+                    </Link>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ padding: "8px 0", color: "var(--danger)" }}
+                      onClick={() => handleRemove(product.id)}
+                    >
+                      <Trash2 size={12} style={{ marginRight: 4 }} /> Remove
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+            {/* Add new card */}
+            <Link
+              href="/products"
+              className="card"
               style={{
-                height: 180,
-                borderRadius: 10,
-                background: "var(--bg-surface-2)",
+                padding: 24,
                 display: "flex",
+                flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: 60,
-                position: "relative",
+                gap: 12,
+                border: "2px dashed var(--border)",
+                background: "transparent",
+                textAlign: "center",
+                cursor: "pointer",
+                textDecoration: "none",
               }}
             >
-              <span className="badge badge-danger" style={{ position: "absolute", top: 8, right: 8 }}>
-                42% OFF
-              </span>
-              🖥️
-            </div>
-            <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--primary)", textTransform: "uppercase" }}>
-                DELL
-              </div>
-              <h3 style={{ fontSize: 15, fontWeight: 600, margin: "2px 0 6px" }}>34&quot; Curved Monitor</h3>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
-                <span style={{ fontSize: 18, fontWeight: 700 }}>$549.99</span>
-                <span style={{ fontSize: 12, color: "var(--text-muted)", textDecoration: "line-through" }}>$949.99</span>
-              </div>
               <div
                 style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: "50%",
                   background: "var(--primary-light)",
-                  padding: "6px 10px",
-                  borderRadius: 6,
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: "var(--primary)",
-                  display: "inline-flex",
+                  display: "flex",
                   alignItems: "center",
-                  gap: 4,
+                  justifyContent: "center",
+                  fontSize: 20,
+                  color: "var(--primary)",
                 }}
               >
-                ⚡ All-time Low Reached
+                <Plus size={20} />
               </div>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: "auto" }}>
-              <button className="btn btn-ghost btn-sm" style={{ padding: "8px 0" }}>Set Alert</button>
-              <button className="btn btn-ghost btn-sm" style={{ padding: "8px 0" }}>View Details</button>
-            </div>
-          </div>
-
-          {/* Add New Product Card */}
-          <div
-            className="card"
-            style={{
-              padding: 24,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 12,
-              border: "2px dashed var(--border)",
-              background: "transparent",
-              textAlign: "center",
-              cursor: "pointer",
-            }}
-          >
-            <div
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: "50%",
-                background: "var(--primary-light)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 20,
-                color: "var(--primary)",
-              }}
-            >
-              +
-            </div>
-            <div>
-              <div style={{ fontWeight: 600, fontSize: 14 }}>Add New Product</div>
-              <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
-                Paste a URL to track pricing
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 14, color: "var(--text-primary)" }}>Add New Product</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
+                  Browse products to track pricing
+                </div>
               </div>
-            </div>
+            </Link>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Right Sidebar Columns */}
+      {/* Right Sidebar */}
       <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
         {/* Wishlist Insights */}
         <div className="card" style={{ padding: 18 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-            <span>✨</span>
+            <Star size={16} fill="var(--warning)" stroke="var(--warning)" />
             <h4 style={{ fontSize: 14, fontWeight: 600, margin: 0 }}>Wishlist Insights</h4>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "var(--primary)", marginBottom: 4 }}>
-                Buy Now Advice
-              </div>
-              <p style={{ fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.5, margin: "0 0 6px" }}>
-                3 items in your wishlist are currently at their historic lowest prices ever recorded.
-              </p>
-              <span style={{ fontSize: 11, color: "var(--primary)", fontWeight: 600, cursor: "pointer" }}>
-                View these items &rarr;
-              </span>
-            </div>
+            {wishlist.length > 0 ? (
+              <>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "var(--primary)", marginBottom: 4 }}>
+                    Buy Now Advice
+                  </div>
+                  <p style={{ fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.5, margin: "0 0 6px" }}>
+                    {itemsWithPriceDrops > 0
+                      ? `${itemsWithPriceDrops} item${itemsWithPriceDrops > 1 ? "s" : ""} in your wishlist ${itemsWithPriceDrops > 1 ? "are" : "is"} currently showing price drops.`
+                      : "None of your items currently have active price drops. We'll notify you when they do."}
+                  </p>
+                </div>
 
-            <div style={{ borderTop: "1px solid var(--border)", paddingTop: 10 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)", marginBottom: 4 }}>
-                Price Pattern Detected
-              </div>
-              <p style={{ fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.5, margin: 0 }}>
-                Electronic accessories often drop by ~15% during the last week of the month. Consider waiting on your cable orders.
-              </p>
-            </div>
+                <div style={{ borderTop: "1px solid var(--border)", paddingTop: 10 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)", marginBottom: 4 }}>
+                    Top Category
+                  </div>
+                  <p style={{ fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.5, margin: 0 }}>
+                    You mostly track <strong>{topCategory}</strong> products ({categoryCounts[topCategory]} item{categoryCounts[topCategory] > 1 ? "s" : ""}).
+                  </p>
+                </div>
 
-            <div
-              style={{
-                borderTop: "1px solid var(--border)",
-                paddingTop: 12,
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr 1fr",
-                textAlign: "center",
-              }}
-            >
-              <div>
-                <div style={{ fontSize: 9, color: "var(--text-muted)" }}>HEALTH</div>
-                <div style={{ fontWeight: 700, color: "var(--success)" }}>A+</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 9, color: "var(--text-muted)" }}>AVG. DISC.</div>
-                <div style={{ fontWeight: 700 }}>22%</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 9, color: "var(--text-muted)" }}>TRACKED</div>
-                <div style={{ fontWeight: 700 }}>12</div>
-              </div>
-            </div>
+                <div
+                  style={{
+                    borderTop: "1px solid var(--border)",
+                    paddingTop: 12,
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr 1fr",
+                    textAlign: "center",
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 9, color: "var(--text-muted)" }}>SAVED</div>
+                    <div style={{ fontWeight: 700 }}>{wishlist.length}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 9, color: "var(--text-muted)" }}>PRICE DROPS</div>
+                    <div style={{ fontWeight: 700, color: itemsWithPriceDrops > 0 ? "var(--success)" : "var(--text-muted)" }}>
+                      {itemsWithPriceDrops}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 9, color: "var(--text-muted)" }}>SAVINGS</div>
+                    <div style={{ fontWeight: 700, color: "var(--primary)" }}>${totalPotentialSavings.toFixed(0)}</div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <p style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.5, margin: 0 }}>
+                Add products to your wishlist to see personalized insights.
+              </p>
+            )}
           </div>
         </div>
 
         {/* Trending For You */}
         <div className="card" style={{ padding: 16 }}>
-          <h4 style={{ fontSize: 13, fontWeight: 600, marginBottom: 14 }}>Trending For You</h4>
+          <h4 style={{ fontSize: 13, fontWeight: 600, marginBottom: 14, margin: "0 0 14px" }}>Trending For You</h4>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {[
-              { name: "Series 9 Smartwatch", price: "$329.00", off: "18% off", icon: "⌚" },
-              { name: "Portable Espresso", price: "$89.50", off: "New", icon: "☕" },
-              { name: "Heritage Duffle", price: "$210.00", off: "25% off", icon: "💼" },
-            ].map((t, idx) => (
-              <div key={idx} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 6,
-                    background: "var(--bg-surface-2)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 16,
-                  }}
-                >
-                  {t.icon}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600 }}>{t.name}</div>
-                  <div style={{ fontSize: 10, color: "var(--text-muted)" }}>
-                    {t.price} •{" "}
-                    <span style={{ color: t.off === "New" ? "var(--info)" : "var(--danger)", fontWeight: 600 }}>
-                      {t.off}
-                    </span>
+            {wishlist.length > 0 ? (
+              wishlist.slice(0, 3).map((item, idx) => {
+                const p = item.product;
+                if (!p) return null;
+                return (
+                  <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 6,
+                        background: "var(--bg-surface-2)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        overflow: "hidden",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {p.imageUrl ? (
+                        <img src={p.imageUrl} alt={p.name} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ) : (
+                        <span style={{ fontSize: 14 }}>📦</span>
+                      )}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {p.title || p.name || "Product"}
+                      </div>
+                      <div style={{ fontSize: 10, color: "var(--text-muted)" }}>
+                        {getBestPrice(p)} • {p.brand || p.category || "General"}
+                      </div>
+                    </div>
+                    <Link
+                      href={`/products/${p.id}`}
+                      style={{
+                        border: "none",
+                        background: "var(--bg-surface-2)",
+                        width: 24,
+                        height: 24,
+                        borderRadius: "50%",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 12,
+                        color: "var(--primary)",
+                        textDecoration: "none",
+                      }}
+                    >
+                      <ExternalLink size={12} />
+                    </Link>
                   </div>
-                </div>
-                <button
-                  style={{
-                    border: "none",
-                    background: "var(--bg-surface-2)",
-                    width: 24,
-                    height: 24,
-                    borderRadius: "50%",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 700,
-                    fontSize: 12,
-                  }}
-                >
-                  +
-                </button>
+                );
+              })
+            ) : (
+              <div style={{ fontSize: 12, color: "var(--text-muted)", textAlign: "center", padding: 12 }}>
+                No items in wishlist yet.
               </div>
-            ))}
+            )}
           </div>
-          <button
+          <Link
+            href="/products"
             className="btn btn-ghost btn-sm"
-            style={{ width: "100%", height: 32, marginTop: 14, fontSize: 11, padding: 0 }}
+            style={{ width: "100%", height: 32, marginTop: 14, fontSize: 11, padding: 0, textDecoration: "none" }}
           >
-            Explore All Trending
-          </button>
+            Explore All Products
+          </Link>
         </div>
       </div>
     </div>

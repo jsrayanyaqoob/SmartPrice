@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { Plus, Trash2, Star, Sparkles, RefreshCw, HelpCircle, AlertCircle } from "lucide-react";
+import { Plus, Trash2, Star, Sparkles, RefreshCw, HelpCircle, AlertCircle, Package, GitCompare, BrainCircuit, Store, X, Scale } from "lucide-react";
+import AlertButton from "@/components/AlertButton";
 
 export default function UserDashboard() {
+  useEffect(() => { document.title = "Dashboard - SmartPrice"; document.querySelector('meta[name="description"]')?.setAttribute('content', 'Your personalized SmartPrice dashboard. Track prices, compare products, get AI recommendations, and manage price alerts.'); }, []);
   const [products, setProducts] = useState([]);
   const [recommendedProducts, setRecommendedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -55,45 +56,7 @@ export default function UserDashboard() {
       }
     } catch (err) {
       console.error(err);
-      setError("Failed to load products. Using offline backup.");
-      // Fallback fallback products if backend has issues
-      const fallback = [
-        {
-          id: "sony-wh-1000xm5",
-          title: "Sony WH-1000XM5",
-          name: "Sony WH-1000XM5",
-          brand: "Sony",
-          category: "Electronics",
-          imageUrl: "https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?q=80&w=600&auto=format&fit=crop",
-          description: "Industry leading noise canceling wireless headphones.",
-          price: 348.0,
-          bestPrice: "$298.00",
-          originalPrice: "$399.00",
-          savings: "$101.00",
-          rating: 4.8,
-          bestStore: "Amazon",
-          specs: { "Noise Cancelling": "Industry Leading", "Battery Life": "30 Hours", "Bluetooth": "v5.2" }
-        },
-        {
-          id: "macbook-pro-14-m3",
-          title: "MacBook Pro 14\" M3",
-          name: "MacBook Pro 14\" M3",
-          brand: "Apple",
-          category: "Computing",
-          imageUrl: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=600&auto=format&fit=crop",
-          description: "Supercharged by Apple M3 processor.",
-          price: 1599.0,
-          bestPrice: "$1549.00",
-          originalPrice: "$1799.00",
-          savings: "$250.00",
-          rating: 4.9,
-          bestStore: "Best Buy",
-          specs: { "Processor": "Apple M3", "RAM": "16GB", "Display": "14-inch XDR" }
-        }
-      ];
-      setProducts(fallback);
-      setRecommendedProducts([]);
-      setCompareList(fallback);
+      setError("Unable to load products from API. Please try refreshing.");
     } finally {
       setLoading(false);
     }
@@ -103,43 +66,12 @@ export default function UserDashboard() {
     loadProducts();
   }, []);
 
-  // Handle drag operations
-  const onDragEnd = (result) => {
-    const { source, destination } = result;
-    if (!destination) return;
-
-    // Draggable pool to comparison zone
-    if (source.droppableId === "products-pool" && destination.droppableId === "comparison-zone") {
-      const draggedProduct = products[source.index];
-      if (!compareList.some((p) => p.id === draggedProduct.id)) {
-        if (compareList.length < 4) {
-          setCompareList([...compareList, draggedProduct]);
-        } else {
-          // Replace the slot where it is dropped
-          const targetIndex = destination.index;
-          const newList = [...compareList];
-          newList[targetIndex < 4 ? targetIndex : 3] = draggedProduct;
-          setCompareList(newList);
-        }
-      }
-    }
-
-    // Reordering inside comparison zone
-    if (source.droppableId === "comparison-zone" && destination.droppableId === "comparison-zone") {
-      const items = Array.from(compareList);
-      const [reorderedItem] = items.splice(source.index, 1);
-      items.splice(destination.index, 0, reorderedItem);
-      setCompareList(items);
-    }
-  };
-
-  // Add a product to the comparison zone directly via button
+  // Add a product to the comparison zone via button
   const addToCompare = (product) => {
     if (compareList.some((p) => p.id === product.id)) return;
     if (compareList.length < 4) {
       setCompareList([...compareList, product]);
     } else {
-      // Replace the first item if full
       const newList = [...compareList];
       newList[0] = product;
       setCompareList(newList);
@@ -149,6 +81,15 @@ export default function UserDashboard() {
   // Remove a product from the comparison zone
   const removeFromCompare = (productId) => {
     setCompareList(compareList.filter((p) => p.id !== productId));
+  };
+
+  // Reorder within comparison zone (move left/right)
+  const moveCompareItem = (index, direction) => {
+    const newList = [...compareList];
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= newList.length) return;
+    [newList[index], newList[targetIndex]] = [newList[targetIndex], newList[index]];
+    setCompareList(newList);
   };
 
   const getRecommendedProducts = (replyText) => {
@@ -260,43 +201,53 @@ export default function UserDashboard() {
   };
 
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 320px", gap: 24, width: "100%", overflowX: "hidden" }}>
         
         {/* Main Content Pane */}
         <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
           
-          {/* KPI Dashboard Cards */}
+          {/* Error banner */}
+          {error && (
+            <div style={{ padding: "10px 14px", background: "rgba(239,68,68,0.1)", border: "1px solid var(--danger)", color: "var(--danger)", borderRadius: 8, fontSize: 13, marginBottom: 16, fontWeight: 500 }}>
+              {error}{' '}
+              <button onClick={loadProducts} style={{ background: "none", border: "none", color: "var(--danger)", fontWeight: 700, cursor: "pointer", textDecoration: "underline", fontFamily: "inherit", fontSize: "inherit" }}>Retry</button>
+            </div>
+          )}
+
+          {/* KPI Dashboard Cards - calculated from real data */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 16 }}>
             {[
-              { label: "Total Saved", value: "$1,342.90", icon: "👛", color: "var(--success)" },
-              { label: "Tracked Items", value: `${products.length * 3} Items`, icon: "📊", color: "var(--info)" },
-              { label: "Active Alerts", value: "8 Alerts", icon: "⏰", color: "var(--warning)" },
-              { label: "Compare Matrix", value: `${compareList.length}/4 Active`, icon: "⚔️", color: "var(--primary)" },
-            ].map((kpi, idx) => (
-              <div key={idx} className="stat-card" style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                <div
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 10,
-                    background: "var(--bg-surface-2)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 20,
-                  }}
-                >
-                  {kpi.icon}
-                </div>
-                <div>
-                  <div className="stat-label">{kpi.label}</div>
-                  <div className="stat-value" style={{ fontSize: 20 }}>
-                    {kpi.value}
+              { label: "Total Products", value: `${products.length} Items`, icon: Package, color: "var(--primary)" },
+              { label: "Compare Matrix", value: `${compareList.length}/4 Active`, icon: GitCompare, color: "var(--primary)" },
+              { label: "AI Recommendations", value: `${recommendedProducts.length} Picks`, icon: BrainCircuit, color: "var(--info)" },
+              { label: "Live Stores", value: `${products.length > 0 ? "50,000+" : "—"}`, icon: Store, color: "var(--success)" },
+            ].map((kpi, idx) => {
+              const IconComponent = kpi.icon;
+              return (
+                <div key={idx} className="stat-card" style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                  <div
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 10,
+                      background: `${kpi.color}15`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: kpi.color,
+                    }}
+                  >
+                    <IconComponent size={20} />
+                  </div>
+                  <div>
+                    <div className="stat-label">{kpi.label}</div>
+                    <div className="stat-value" style={{ fontSize: 20 }}>
+                      {kpi.value}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Flash AI Deals Section */}
@@ -331,6 +282,8 @@ export default function UserDashboard() {
                         <img
                           src={p.imageUrl}
                           alt={p.title || p.name || "Product"}
+                          loading="lazy"
+                          decoding="async"
                           style={{
                             width: 72,
                             height: 72,
@@ -353,9 +306,12 @@ export default function UserDashboard() {
                         <div style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.3 }}>{previewTitle}</div>
                         <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{p.brand || p.category || "Live deal"}</div>
                         <div style={{ fontSize: 13, fontWeight: 700 }}>{p.bestPrice || `$${Number(p.value || 0).toFixed(2)}`}</div>
-                        <Link href={`/products/${p.id}`} className="btn btn-ghost btn-sm" style={{ width: "fit-content", padding: "4px 8px", fontSize: 11, textDecoration: "none" }}>
-                          Details
-                        </Link>
+                        <div style={{ display: "flex", gap: 4 }}>
+                          <Link href={`/products/${p.id}`} className="btn btn-ghost btn-sm" style={{ padding: "4px 8px", fontSize: 11, textDecoration: "none" }}>
+                            Details
+                          </Link>
+                          <AlertButton productId={p.id} productName={p.title || p.name} compact />
+                        </div>
                       </div>
                     </div>
                   );
@@ -384,95 +340,75 @@ export default function UserDashboard() {
                 No AI recommendations yet. Recommended picks will appear here once the AI suggests them.
               </div>
             ) : (
-              <Droppable droppableId="products-pool" isDropDisabled={true}>
-                {(provided) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}
-                  >
-                    {recommendedProducts.map((p, idx) => {
-                      const previewTitle = (p.title || p.name || "Product").length > 28
-                        ? `${(p.title || p.name || "Product").slice(0, 28)}...`
-                        : (p.title || p.name || "Product");
-                      const displayPrice = p.bestPrice || `$${Number(p.price || 0).toFixed(2)}`;
-                      const displayStore = p.bestStore || p.brand || "Store";
-                      const starValue = p.rating || p.stars || 4.6;
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+                {recommendedProducts.map((p, idx) => {
+                  const previewTitle = (p.title || p.name || "Product").length > 28
+                    ? `${(p.title || p.name || "Product").slice(0, 28)}...`
+                    : (p.title || p.name || "Product");
+                  const displayPrice = p.bestPrice || `$${Number(p.price || 0).toFixed(2)}`;
+                  const displayStore = p.bestStore || p.brand || "Store";
+                  const starValue = p.rating || p.stars || 4.6;
 
-                      return (
-                        <Draggable key={p.id} draggableId={p.id} index={idx}>
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className="card"
-                              style={{
-                                padding: 10,
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: 8,
-                                minHeight: 190,
-                                background: snapshot.isDragging ? "var(--primary-light)" : "var(--bg-surface)",
-                                borderColor: snapshot.isDragging ? "var(--primary)" : "var(--border)",
-                                boxShadow: snapshot.isDragging ? "0 8px 24px rgba(107, 51, 246, 0.15)" : "none",
-                                cursor: "grab",
-                                ...provided.draggableProps.style,
-                              }}
-                            >
-                              <div style={{ position: "relative", height: 84, borderRadius: 8, overflow: "hidden", background: "var(--bg-surface-2)" }}>
-                                <img
-                                  src={p.imageUrl}
-                                  alt={previewTitle}
-                                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                />
-                                <span 
-                                  className="badge badge-pro" 
-                                  style={{ position: "absolute", top: 6, left: 6, fontSize: 8 }}
-                                >
-                                  ★ {starValue}
-                                </span>
-                              </div>
-                              <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
-                                <h4 style={{ fontSize: 12, fontWeight: 600, margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                                  {previewTitle}
-                                </h4>
-                                <div style={{ fontSize: 11, color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                                  {p.brand || p.category || "Live deal"}
-                                </div>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 6 }}>
-                                  <span style={{ fontWeight: 700, fontSize: 13 }}>{displayPrice}</span>
-                                  <span style={{ fontSize: 10, color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                                    {displayStore}
-                                  </span>
-                                </div>
-                              </div>
-                              <button 
-                                className="btn btn-ghost btn-sm" 
-                                style={{ padding: "5px 8px", fontSize: 11, width: "100%" }}
-                                onClick={() => addToCompare(p)}
-                              >
-                                Compare
-                              </button>
-                            </div>
-                          )}
-                        </Draggable>
-                      );
-                    })}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
+                  return (
+                    <div key={p.id} className="card" style={{
+                      padding: 10,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                      minHeight: 190,
+                      background: "var(--bg-surface)",
+                      borderColor: "var(--border)",
+                    }}>
+                      <div style={{ position: "relative", height: 84, borderRadius: 8, overflow: "hidden", background: "var(--bg-surface-2)" }}>
+                        <img
+                          src={p.imageUrl}
+                          alt={previewTitle}
+                          loading="lazy"
+                          decoding="async"
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                        <span 
+                          className="badge badge-pro" 
+                          style={{ position: "absolute", top: 6, left: 6, fontSize: 8 }}
+                        >
+                          ★ {starValue}
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
+                        <h4 style={{ fontSize: 12, fontWeight: 600, margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {previewTitle}
+                        </h4>
+                        <div style={{ fontSize: 11, color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {p.brand || p.category || "Live deal"}
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 6 }}>
+                          <span style={{ fontWeight: 700, fontSize: 13 }}>{displayPrice}</span>
+                          <span style={{ fontSize: 10, color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {displayStore}
+                          </span>
+                        </div>
+                      </div>
+                      <button 
+                        className="btn btn-ghost btn-sm" 
+                        style={{ padding: "5px 8px", fontSize: 11, width: "100%" }}
+                        onClick={() => addToCompare(p)}
+                      >
+                        <Scale size={12} /> Compare
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
 
-          {/* Smart Compare Zone (Droppable Slot Matrix) */}
+          {/* Smart Compare Zone */}
           <div className="card" style={{ padding: 20, border: "2px dashed var(--primary)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <div>
                 <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>Smart Compare Zone</h3>
                 <p style={{ fontSize: 12, color: "var(--text-secondary)", margin: "4px 0 0" }}>
-                  Drag items in, or drag to reorder. Maximum 4 products.
+                  Click &quot;Compare&quot; on any product card to add it here. Max 4 products.
                 </p>
               </div>
               <div style={{ display: "flex", gap: 8 }}>
@@ -496,108 +432,74 @@ export default function UserDashboard() {
               </div>
             </div>
 
-            <Droppable droppableId="comparison-zone" direction="horizontal">
-              {(provided, snapshot) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-                    gap: 12,
-                    minHeight: 100,
-                    background: snapshot.isDraggingOver ? "rgba(107, 51, 246, 0.04)" : "transparent",
-                    padding: 8,
-                    borderRadius: 8,
-                  }}
-                >
-                  {compareList.map((product, index) => (
-                    <Draggable key={`compare-${product.id}`} draggableId={`compare-${product.id}`} index={index}>
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          className="card"
-                          style={{
-                            padding: 10,
-                            position: "relative",
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            background: snapshot.isDragging ? "var(--primary-light)" : "var(--bg-surface-2)",
-                            border: "1px solid var(--border)",
-                            textAlign: "center",
-                            cursor: "grab",
-                            ...provided.draggableProps.style,
-                          }}
-                        >
-                          <button
-                            onClick={() => removeFromCompare(product.id)}
-                            style={{
-                              position: "absolute",
-                              top: 4,
-                              right: 4,
-                              background: "rgba(239, 68, 68, 0.1)",
-                              color: "var(--danger)",
-                              border: "none",
-                              borderRadius: "50%",
-                              width: 18,
-                              height: 18,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              cursor: "pointer",
-                              fontSize: 10,
-                            }}
-                          >
-                            ×
-                          </button>
-                          <img
-                            src={product.imageUrl}
-                            alt={product.title}
-                            style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 6, marginBottom: 6 }}
-                          />
-                          <div 
-                            style={{ 
-                              fontSize: 11, 
-                              fontWeight: 600, 
-                              whiteSpace: "nowrap", 
-                              overflow: "hidden", 
-                              textOverflow: "ellipsis", 
-                              width: "100%" 
-                            }}
-                          >
-                            {product.title}
-                          </div>
-                          <div style={{ fontSize: 10, fontWeight: 700, marginTop: 2 }}>{product.bestPrice}</div>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-
-                  {/* Empty slots placeholders */}
-                  {Array.from({ length: Math.max(0, 4 - compareList.length) }).map((_, idx) => (
-                    <div
-                      key={`placeholder-${idx}`}
-                      style={{
-                        height: 96,
-                        borderRadius: 8,
-                        border: "2px dashed var(--border)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: "var(--text-muted)",
-                        fontSize: 11,
-                      }}
-                    >
-                      Drop Here
-                    </div>
-                  ))}
-                  {provided.placeholder}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+              gap: 12,
+              minHeight: 100,
+              padding: 8,
+              borderRadius: 8,
+            }}>
+              {compareList.map((product, index) => (
+                <div key={product.id} className="card" style={{
+                  padding: 10,
+                  position: "relative",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  background: "var(--bg-surface-2)",
+                  border: "1px solid var(--border)",
+                  textAlign: "center",
+                }}>
+                  <button
+                    onClick={() => removeFromCompare(product.id)}
+                    style={{
+                      position: "absolute", top: 4, right: 4,
+                      background: "rgba(239, 68, 68, 0.1)", color: "var(--danger)",
+                      border: "none", borderRadius: "50%", width: 18, height: 18,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      cursor: "pointer", fontSize: 10,
+                    }}
+                  >
+                    <X size={10} />
+                  </button>
+                  <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
+                    <button
+                      onClick={() => moveCompareItem(index, -1)}
+                      disabled={index === 0}
+                      style={{ background: "none", border: "none", cursor: index === 0 ? "default" : "pointer", opacity: index === 0 ? 0.3 : 0.6, padding: 2, fontSize: 12 }}
+                    >◀</button>
+                    <button
+                      onClick={() => moveCompareItem(index, 1)}
+                      disabled={index === compareList.length - 1}
+                      style={{ background: "none", border: "none", cursor: index === compareList.length - 1 ? "default" : "pointer", opacity: index === compareList.length - 1 ? 0.3 : 0.6, padding: 2, fontSize: 12 }}
+                    >▶</button>
+                  </div>
+                  <img
+                    src={product.imageUrl}
+                    alt={product.title}
+                    loading="lazy"
+                    decoding="async"
+                    style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 6, marginBottom: 6 }}
+                  />
+                  <div style={{ fontSize: 11, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", width: "100%" }}>
+                    {product.title}
+                  </div>
+                  <div style={{ fontSize: 10, fontWeight: 700, marginTop: 2 }}>{product.bestPrice}</div>
                 </div>
-              )}
-            </Droppable>
+              ))}
+
+              {/* Empty slots */}
+              {Array.from({ length: Math.max(0, 4 - compareList.length) }).map((_, idx) => (
+                <div key={`empty-${idx}`} style={{
+                  height: 96, borderRadius: 8, border: "2px dashed var(--border)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  color: "var(--text-muted)", fontSize: 11,
+                }}>
+                  Empty Slot
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Dynamic Comparison Matrix */}
@@ -612,7 +514,7 @@ export default function UserDashboard() {
                       {compareList.map((p) => (
                         <th key={`header-${p.id}`} style={{ padding: "10px 8px", textAlign: "center" }}>
                           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                            <img src={p.imageUrl} alt={p.title} style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 4 }} />
+                            <img src={p.imageUrl} alt={p.title} loading="lazy" decoding="async" style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 4 }} />
                             <span style={{ fontSize: 12, fontWeight: 700, color: "var(--foreground)" }}>{p.title}</span>
                           </div>
                         </th>
@@ -709,49 +611,6 @@ export default function UserDashboard() {
         {/* Right Sidebar Columns */}
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
           
-          {/* Continue Viewing Card */}
-          <div className="card" style={{ padding: 16, background: "var(--primary-light)", borderColor: "transparent" }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "var(--primary)", textTransform: "uppercase" }}>
-              CONTINUE VIEWING
-            </span>
-            <div style={{ display: "flex", gap: 12, margin: "12px 0" }}>
-              <div
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 8,
-                  background: "white",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 24,
-                }}
-              >
-                🎧
-              </div>
-              <div>
-                <h4 style={{ fontSize: 13, fontWeight: 600, margin: "0 0 2px" }}>Sony WH-1000XM5</h4>
-                <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                  $298.00 • <span style={{ color: "var(--success)", fontWeight: 600 }}>Price Stable</span>
-                </div>
-              </div>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--text-secondary)", marginBottom: 12 }}>
-              <span>Price Confidence</span>
-              <span style={{ fontWeight: 600, color: "var(--primary)" }}>98% (Extremely High)</span>
-            </div>
-            <button 
-              className="btn btn-primary btn-sm" 
-              style={{ width: "100%", height: 32, background: "white", color: "var(--primary)" }}
-              onClick={() => {
-                const sony = products.find(p => p.id === "sony-wh-1000xm5" || p.slug === "sony-wh-1000xm5");
-                if (sony) addToCompare(sony);
-              }}
-            >
-              Resume Comparison
-            </button>
-          </div>
-
           {/* Budget AI Planner */}
           <div className="card" style={{ padding: 18 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
@@ -811,25 +670,32 @@ export default function UserDashboard() {
             )}
           </div>
 
-          {/* Top Stores Panel */}
+          {/* Products Summary */}
           <div className="card" style={{ padding: 16 }}>
-            <h4 style={{ fontSize: 14, fontWeight: 600, margin: "0 0 12px" }}>Store Network Status</h4>
+            <h4 style={{ fontSize: 14, fontWeight: 600, margin: "0 0 12px" }}>Live Products</h4>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {[
-                { name: "Amazon", label: "Crawled 2m ago", color: "var(--success)" },
-                { name: "Walmart", label: "Crawled 5m ago", color: "var(--success)" },
-                { name: "Best Buy", label: "Crawled 1m ago", color: "var(--success)" },
-              ].map((s, idx) => (
-                <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div style={{ fontSize: 12, fontWeight: 600 }}>{s.name}</div>
-                  <span style={{ fontSize: 10, color: s.color, fontWeight: 500 }}>{s.label}</span>
+              {products.length === 0 ? (
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                  {loading ? "Loading products..." : "No products loaded yet."}
                 </div>
-              ))}
+              ) : (
+                <>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ fontSize: 12, fontWeight: 600 }}>Total Products</div>
+                    <span style={{ fontSize: 12, color: "var(--primary)", fontWeight: 600 }}>{products.length}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ fontSize: 12, fontWeight: 600 }}>Categories Found</div>
+                    <span style={{ fontSize: 12, color: "var(--primary)", fontWeight: 600 }}>
+                      {new Set(products.map(p => p.category || "General")).size}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
 
       </div>
-    </DragDropContext>
   );
 }

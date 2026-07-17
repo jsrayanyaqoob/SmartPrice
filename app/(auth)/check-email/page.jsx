@@ -16,7 +16,7 @@ export default function CheckEmailPage() {
   );
 
   return (
-    <AuthSplitLayout rightContent={rightCard}>
+    <AuthSplitLayout rightContent={rightCard} image="https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=800&h=600&auto=format&fit=crop">
       <div style={{ maxWidth: 360, margin: "auto", width: "100%", textAlign: "center" }}>
         {/* Email Icon */}
         <div

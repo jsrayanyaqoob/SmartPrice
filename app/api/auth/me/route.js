@@ -31,36 +31,41 @@ export async function GET(request) {
 }
 
 export async function PATCH(request) {
-  const authUser = await getUserFromRequest(request);
-  if (!authUser) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const authUser = await getUserFromRequest(request);
+    if (!authUser) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { name, email } = await request.json();
+
+    const existing = email
+      ? await prisma.user.findFirst({ where: { email, NOT: { id: authUser.id } } })
+      : null;
+
+    if (existing) {
+      return NextResponse.json({ error: "Email already in use" }, { status: 400 });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: authUser.id },
+      data: {
+        name: name || null,
+        email: email || authUser.email,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        plan: true,
+        avatarUrl: true,
+      },
+    });
+
+    return NextResponse.json({ success: true, user: updatedUser });
+  } catch (error) {
+    console.error("Profile update error:", error);
+    return NextResponse.json({ error: "Failed to update profile" }, { status: 500 });
   }
-
-  const { name, email } = await request.json();
-
-  const existing = email
-    ? await prisma.user.findFirst({ where: { email, NOT: { id: authUser.id } } })
-    : null;
-
-  if (existing) {
-    return NextResponse.json({ error: "Email already in use" }, { status: 400 });
-  }
-
-  const updatedUser = await prisma.user.update({
-    where: { id: authUser.id },
-    data: {
-      name: name || null,
-      email: email || authUser.email,
-    },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      plan: true,
-      avatarUrl: true,
-    },
-  });
-
-  return NextResponse.json({ success: true, user: updatedUser });
 }

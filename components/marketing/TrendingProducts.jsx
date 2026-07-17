@@ -2,9 +2,29 @@
 
 import { useState, useEffect } from "react";
 
+const categoryIcons = {
+  "Electronics": "⚡",
+  "Gaming Rig": "🎮",
+  "Fashion": "👕",
+  "Home": "🏠",
+  "Sports": "⚽",
+  "General": "📱",
+  "default": "🏷️"
+};
+
+const categoryColors = {
+  "Electronics": { bg: "#ede9ff", text: "#6b33f6" },
+  "Gaming Rig": { bg: "#dbeafe", text: "#3b5bdb" },
+  "Fashion": { bg: "#fee2e2", text: "#ef4444" },
+  "Home": { bg: "#d1fae5", text: "#10b981" },
+  "Sports": { bg: "#fef3c7", text: "#f59e0b" },
+  "General": { bg: "#ede9ff", text: "#6b33f6" },
+};
+
 export default function TrendingProducts() {
   const [productsList, setProductsList] = useState([]);
   const [scrollIndex, setScrollIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadTrending() {
@@ -13,31 +33,15 @@ export default function TrendingProducts() {
         if (res.ok) {
           const data = await res.json();
           if (data.products && data.products.length > 0) {
-            const mapped = data.products.map((p) => ({
-              id: p.id,
-              name: p.name || p.title || "Product",
-              bestPrice: p.bestPrice || "Price unavailable",
-              retailers: p.retailers || 1,
-              img: p.imageUrl ? (
-                <img
-                  src={p.imageUrl}
-                  alt={p.name || p.title || "Product"}
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
-              ) : (
-                "📦"
-              ),
-            }));
-            setProductsList(mapped);
-          } else {
-            setProductsList([]);
+            // Shuffle to ensure mixed categories
+            const shuffled = [...data.products].sort(() => Math.random() - 0.5);
+            setProductsList(shuffled);
           }
-        } else {
-          setProductsList([]);
         }
       } catch (err) {
         console.error(err);
-        setProductsList([]);
+      } finally {
+        setLoading(false);
       }
     }
     loadTrending();
@@ -45,14 +49,20 @@ export default function TrendingProducts() {
 
   const maxScroll = Math.max(0, productsList.length - 4);
 
+  const getCategoryIcon = (cat) => categoryIcons[cat] || categoryIcons["default"];
+  const getCategoryColor = (cat) => categoryColors[cat] || categoryColors["General"];
+
   return (
-    <section style={{ padding: "72px 0", background: "white" }}>
+    <section style={{ padding: "80px 0", background: "var(--bg-app)" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px" }}>
         {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 36 }}>
           <div>
             <div className="section-label">HOT RIGHT NOW</div>
             <h2 className="heading-2">Trending Products</h2>
+            <p style={{ fontSize: 14, color: "var(--text-secondary)", marginTop: 6 }}>
+              Mixed categories — from keyboards to cameras, all in one place
+            </p>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <button
@@ -60,10 +70,13 @@ export default function TrendingProducts() {
               disabled={scrollIndex === 0}
               aria-label="Previous"
               style={{
-                width: 36, height: 36, borderRadius: "50%", border: "1px solid var(--border)",
+                width: 38, height: 38, borderRadius: "50%", border: "1px solid var(--border)",
                 background: "white", cursor: "pointer", display: "flex", alignItems: "center",
                 justifyContent: "center", opacity: scrollIndex === 0 ? 0.4 : 1,
+                transition: "all 0.2s",
               }}
+              onMouseEnter={(e) => { if (scrollIndex !== 0) e.currentTarget.style.background = "var(--primary-light)"; }}
+              onMouseLeave={(e) => e.currentTarget.style.background = "white"}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6" /></svg>
             </button>
@@ -72,10 +85,13 @@ export default function TrendingProducts() {
               disabled={scrollIndex >= maxScroll}
               aria-label="Next"
               style={{
-                width: 36, height: 36, borderRadius: "50%", border: "1px solid var(--border)",
+                width: 38, height: 38, borderRadius: "50%", border: "1px solid var(--border)",
                 background: "white", cursor: "pointer", display: "flex", alignItems: "center",
                 justifyContent: "center", opacity: scrollIndex >= maxScroll ? 0.4 : 1,
+                transition: "all 0.2s",
               }}
+              onMouseEnter={(e) => { if (scrollIndex < maxScroll) e.currentTarget.style.background = "var(--primary-light)"; }}
+              onMouseLeave={(e) => e.currentTarget.style.background = "white"}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
             </button>
@@ -83,59 +99,140 @@ export default function TrendingProducts() {
         </div>
 
         {/* Product Grid */}
-        <div style={{ overflow: "hidden" }}>
-          {productsList.length === 0 ? (
-            <div style={{ padding: 24, color: "var(--text-muted)" }}>Loading products from the live feed…</div>
+        <div className="products-carousel-viewport">
+          {loading ? (
+            <div style={{ display: "flex", gap: 20 }}>
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="card" style={{ minWidth: 262, padding: 0, overflow: "hidden" }}>
+                  <div style={{ height: 180, animation: "shimmer 2s linear infinite", background: "linear-gradient(90deg, var(--bg-surface-2) 25%, #e8e8ee 50%, var(--bg-surface-2) 75%)", backgroundSize: "200% 100%" }} />
+                  <div style={{ padding: "14px 16px" }}>
+                    <div style={{ height: 14, width: "70%", background: "var(--bg-surface-2)", borderRadius: 4, marginBottom: 8 }} />
+                    <div style={{ height: 12, width: "50%", background: "var(--bg-surface-2)", borderRadius: 4 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : productsList.length === 0 ? (
+            <div style={{ padding: 40, color: "var(--text-muted)", textAlign: "center" }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>📦</div>
+              <p>No trending products available right now. Check back soon!</p>
+            </div>
           ) : (
           <div
-            style={{
-              display: "flex",
-              gap: 20,
-              transition: "transform 0.3s ease",
-              transform: `translateX(-${scrollIndex * 270}px)`,
-            }}
+            className="products-carousel-track"
+            style={{ transform: `translateX(-${scrollIndex * 282}px)` }}
           >
-            {productsList.map((product) => (
-              <div
-                key={product.id}
-                className="card card-hover"
-                style={{
-                  minWidth: 240,
-                  padding: 0,
-                  overflow: "hidden",
-                  cursor: "pointer",
-                }}
-              >
-                {/* Product Image Area */}
+            {productsList.map((product) => {
+              const catColor = getCategoryColor(product.category);
+              return (
                 <div
+                  key={product.id}
+                  className="products-carousel-slide card card-hover trending-product-card"
                   style={{
-                    height: 160,
-                    background: "var(--bg-surface-2)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 48,
+                    padding: 0,
+                    overflow: "hidden",
+                    cursor: "pointer",
                   }}
                 >
-                  {product.img}
-                </div>
-                <div style={{ padding: "14px 16px" }}>
-                  <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>{product.name}</h3>
-                  <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 6 }}>
-                    Best Price Found: <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{product.bestPrice}</span>
+                  {/* Product Image - Full width */}
+                  <div
+                    style={{
+                      height: 180,
+                      background: "white",
+                      position: "relative",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {product.imageUrl ? (
+                      <img
+                        src={product.imageUrl}
+                        alt={product.name}
+                        loading="lazy"
+                        decoding="async"
+                        className="trending-product-img"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: "100%",
+                        height: "100%",
+                        background: "linear-gradient(135deg, var(--primary-light), #ddd6fe)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 48,
+                      }}>
+                        {getCategoryIcon(product.category)}
+                      </div>
+                    )}
+                    {/* Category Badge */}
+                    <div style={{
+                      position: "absolute",
+                      top: 10,
+                      left: 10,
+                      background: catColor.bg,
+                      color: catColor.text,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      padding: "3px 8px",
+                      borderRadius: "var(--radius-full)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                    }}>
+                      <span>{getCategoryIcon(product.category)}</span>
+                      <span>{product.category || "General"}</span>
+                    </div>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: 12, color: "var(--primary)", fontWeight: 600 }}>
-                      {product.retailers} retailers
-                    </span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2">
-                      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                      <polyline points="17 6 23 6 23 12" />
-                    </svg>
+                  <div style={{ padding: "14px 16px" }}>
+                    <h3 style={{
+                      fontSize: 14,
+                      fontWeight: 600,
+                      marginBottom: 4,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}>
+                      {product.name}
+                    </h3>
+                    <div style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 8 }}>
+                      {product.brand && (
+                        <span style={{ color: "var(--text-muted)", marginRight: 6 }}>{product.brand}</span>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                      <span style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>
+                        {product.bestPrice}
+                      </span>
+                      {product.originalPrice && (
+                        <span style={{ fontSize: 12, color: "var(--text-muted)", textDecoration: "line-through" }}>
+                          {product.originalPrice}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--border)", paddingTop: 10 }}>
+                      <span style={{ fontSize: 12, color: "var(--primary)", fontWeight: 600 }}>
+                        {product.retailers} retailer{product.retailers !== 1 ? "s" : ""}
+                      </span>
+                      <span style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: "white",
+                        background: "var(--brand-gradient)",
+                        padding: "3px 10px",
+                        borderRadius: "var(--radius-full)",
+                      }}>
+                        VIEW DEAL
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           )}
         </div>

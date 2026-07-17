@@ -16,7 +16,7 @@ export default function ResetErrorPage() {
   );
 
   return (
-    <AuthSplitLayout rightContent={rightCard}>
+    <AuthSplitLayout rightContent={rightCard} image="https://images.unsplash.com/photo-1607863680198-23d4b2565df6?q=80&w=800&h=600&auto=format&fit=crop">
       <div style={{ maxWidth: 360, margin: "auto", width: "100%", textAlign: "center" }}>
         {/* Error/Warning Icon */}
         <div

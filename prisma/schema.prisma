@@ -8,22 +8,27 @@ generator client {
 }
 
 model User {
-  id           String         @id @default(uuid())
-  name         String?
-  email        String         @unique
-  passwordHash String
-  role         Role           @default(Customer)
-  plan         Plan           @default(FREE)
-  avatarUrl    String?
-  isActive     Boolean        @default(true)
-  lastLoginAt  DateTime?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  id                 String         @id @default(uuid())
+  name               String?
+  email              String         @unique
+  passwordHash       String
+  role               Role           @default(Customer)
+  plan               Plan           @default(FREE)
+  avatarUrl          String?
+  isActive           Boolean        @default(true)
+  lastLoginAt        DateTime?
+  twoFactorSecret    String?
+  twoFactorEnabled   Boolean        @default(false)
+  emailChangeToken   String?
+  emailChangeNewEmail String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
 
   searchHistory SearchHistory[]
   wishlist      Wishlist[]
   chatHistory   ChatHistory[]
   priceAlerts   PriceAlert[]
+  notifications Notification[]
 
   @@index([email])
 }
@@ -115,19 +120,47 @@ model ChatHistory {
 }
 
 model PriceAlert {
-  id           String      @id @default(uuid())
+  id           String         @id @default(uuid())
   userId       String
-  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   productId    String
-  product      Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product      Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
   targetPrice  Float
   currentPrice Float
-  status       AlertStatus @default(ACTIVE)
-  notifyEmail  Boolean     @default(true)
-  notifyPush   Boolean     @default(true)
-  notifySMS    Boolean     @default(false)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  status       AlertStatus    @default(ACTIVE)
+  notifyEmail  Boolean        @default(true)
+  notifyPush   Boolean        @default(true)
+  notifySMS    Boolean        @default(false)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  notifications Notification[]
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String   @db.Text
+  link      String?
+  imageUrl  String?
+  read      Boolean  @default(false)
+  alertId   String?
+  alert     PriceAlert? @relation(fields: [alertId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
+}
+
+enum NotificationType {
+  price_drop
+  tip
+  welcome
+  alert_reached
+  system
 }
 
 enum Role {
@@ -144,6 +177,23 @@ enum AlertStatus {
   ACTIVE
   REACHED
   EXPIRED
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  adminId   String
+  adminName String?
+  action    String
+  entity    String
+  entityId  String?
+  details   String?  @db.Text
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([adminId])
+  @@index([action])
+  @@index([entity])
+  @@index([createdAt])
 }
 
 enum ChatRole {

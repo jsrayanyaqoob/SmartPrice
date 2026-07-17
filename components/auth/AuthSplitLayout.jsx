@@ -3,7 +3,9 @@ export default function AuthSplitLayout({ children, title, subtitle, rightConten
     <div className="auth-layout">
       {/* Left Panel - Form */}
       <div className="auth-form-panel">
-        {children}
+        <div className="auth-form-scroll">
+          {children}
+        </div>
       </div>
 
       {/* Right Panel - Visual */}

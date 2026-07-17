@@ -181,6 +181,8 @@ export default function CompareMatrix({ compareList }) {
                       <img
                         src={product.imageUrl}
                         alt={product.title}
+                        loading="lazy"
+                        decoding="async"
                         style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 6 }}
                       />
                     ) : (

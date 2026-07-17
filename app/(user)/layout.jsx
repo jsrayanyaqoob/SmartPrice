@@ -3,8 +3,20 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import UserSidebar from "@/components/layout/UserSidebar";
 import Topbar from "@/components/layout/Topbar";
+import AdminPortalButton from "@/components/AdminPortalButton";
+import PortalContentWithBreadcrumbs from "@/components/layout/PortalContentWithBreadcrumbs";
+import BackToTop from "@/components/ui/BackToTop";
 
 const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-key-smartprice";
+
+export const metadata = {
+  title: {
+    default: "Dashboard — SmartPrice",
+    template: "%s | SmartPrice",
+  },
+  description:
+    "Your personalized SmartPrice dashboard. Track prices, compare products, get AI recommendations, and manage alerts.",
+};
 
 export default async function UserPortalLayout({ children }) {
   const cookieStore = await cookies();
@@ -36,7 +48,9 @@ export default async function UserPortalLayout({ children }) {
         <Topbar showAnalyze={true} />
 
         {/* Portal Page Content */}
-        <main className="portal-content">{children}</main>
+        <main className="portal-content"><PortalContentWithBreadcrumbs>{children}</PortalContentWithBreadcrumbs></main>
+        <AdminPortalButton />
+        <BackToTop />
       </div>
     </div>
   );

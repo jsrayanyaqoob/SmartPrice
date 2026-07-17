@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
+import { useTheme } from "@/components/ThemeProvider";
 
 const navLinks = [
   { href: "/#features", label: "Features" },
@@ -14,11 +15,12 @@ const navLinks = [
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { darkMode, toggleDarkMode } = useTheme();
 
   return (
     <nav className="nav-marketing" role="navigation" aria-label="Main navigation">
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px" }}>
-        <div style={{ display: "flex", alignItems: "center", height: 64, gap: 32 }}>
+        <div style={{ display: "flex", alignItems: "center", height: 64, gap: 16 }}>
           {/* Logo */}
           <Link
             href="/"
@@ -95,12 +97,51 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* CTA Buttons */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {/* CTA Buttons + Dark Mode Toggle */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {/* Dark Mode Toggle */}
+            <button
+              onClick={toggleDarkMode}
+              aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+              className="theme-toggle-btn"
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: "var(--radius)",
+                border: "1.5px solid var(--border)",
+                background: "transparent",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "var(--text-secondary)",
+                transition: "all 0.2s ease",
+                flexShrink: 0,
+              }}
+            >
+              {darkMode ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="5" />
+                  <line x1="12" y1="1" x2="12" y2="3" />
+                  <line x1="12" y1="21" x2="12" y2="23" />
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                  <line x1="1" y1="12" x2="3" y2="12" />
+                  <line x1="21" y1="12" x2="23" y2="12" />
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+                </svg>
+              )}
+            </button>
+
             <Link
               href="/login"
               style={{
-                padding: "8px 18px",
+                padding: "8px 16px",
                 fontSize: 14,
                 fontWeight: 600,
                 color: "var(--text-primary)",
@@ -172,7 +213,34 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12 }}>
+              <button
+                onClick={toggleDarkMode}
+                aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+                className="btn btn-ghost"
+                style={{ flex: 1, justifyContent: "center", gap: 8 }}
+              >
+                {darkMode ? (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="5" />
+                    <line x1="12" y1="1" x2="12" y2="3" />
+                    <line x1="12" y1="21" x2="12" y2="23" />
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                    <line x1="1" y1="12" x2="3" y2="12" />
+                    <line x1="21" y1="12" x2="23" y2="12" />
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                  </svg>
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+                  </svg>
+                )}
+                {darkMode ? "Light Mode" : "Dark Mode"}
+              </button>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
               <Link href="/login" className="btn btn-ghost" style={{ justifyContent: "center" }}>
                 Log In
               </Link>
@@ -185,6 +253,11 @@ export default function Navbar() {
       </div>
 
       <style>{`
+        .theme-toggle-btn:hover {
+          background: var(--primary-light) !important;
+          border-color: var(--primary) !important;
+          color: var(--primary) !important;
+        }
         @media (max-width: 768px) {
           .desktop-nav { display: none !important; }
           .mobile-menu-btn { display: flex !important; }

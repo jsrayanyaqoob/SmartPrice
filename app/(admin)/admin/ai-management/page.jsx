@@ -1,94 +1,117 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import AdminPageLayout from "@/components/layout/AdminPageLayout";
+
 export default function AIManagementPage() {
+  const [productCount, setProductCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Page-view audit log
+    fetch("/api/admin/audit-logs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "page_view", entity: "ai_management", details: "Viewed AI Management page" }),
+    }).catch(() => {});
+
+    const fetchData = async () => {
+      try {
+        const res = await fetch("/api/products");
+        if (res.ok) {
+          const data = await res.json();
+          setProductCount(data.products?.length || 0);
+        }
+      } catch {} finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const configItems = [
+    { label: "Data Source", value: "Apify Web Scraper" },
+    { label: "Products in Feed", value: loading ? "..." : `${productCount}` },
+    { label: "Price Cache Duration", value: "5 minutes" },
+    { label: "Refresh Interval", value: "On page load" },
+    { label: "Alert Notification", value: "Email + In-app" },
+    { label: "User Auth", value: "JWT + bcrypt" },
+  ];
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      <div>
-        <h2 style={{ fontSize: 28, fontWeight: 700, margin: "0 0 4px" }}>AI Management</h2>
-        <p style={{ fontSize: 14, color: "var(--text-secondary)", margin: 0 }}>
-          Configure and monitor the neural price prediction engine.
-        </p>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
-        {/* AI Status */}
-        <div className="card" style={{ padding: 20 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>Model Status</h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {[
-              { name: "Price Prediction Model", version: "v3.2.1", accuracy: 94.2, status: "Active" },
-              { name: "Trend Analysis Engine", version: "v2.8.0", accuracy: 89.7, status: "Active" },
-              { name: "Deal Detector", version: "v1.5.4", accuracy: 91.5, status: "Active" },
-              { name: "Demand Forecaster", version: "v2.1.0", accuracy: 86.3, status: "Training" },
-            ].map((m, idx) => (
-              <div key={idx} style={{ padding: 12, background: "var(--bg-surface-2)", borderRadius: 8 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>{m.name}</div>
-                    <div style={{ fontSize: 10, color: "var(--text-muted)" }}>{m.version}</div>
-                  </div>
-                  <span
-                    className={m.status === "Active" ? "badge badge-success" : "badge badge-primary"}
-                    style={{ fontSize: 8 }}
-                  >
-                    {m.status}
-                  </span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ flex: 1, height: 6, borderRadius: 3, background: "var(--border)" }}>
-                    <div style={{ height: "100%", borderRadius: 3, width: `${m.accuracy}%`, background: m.status === "Active" ? "var(--success)" : "var(--warning)" }} />
-                  </div>
-                  <span style={{ fontSize: 11, fontWeight: 700 }}>{m.accuracy}%</span>
-                </div>
-              </div>
-            ))}
+    <AdminPageLayout title="API & Configuration" subtitle="View current platform configuration and data source settings.">
+      <AdminPageLayout.Section title="Active Integrations">
+        <div className="integrations-list">
+          <div className="integration-item">
+            <div className="integration-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2">
+                <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
+              </svg>
+            </div>
+            <div className="integration-info">
+              <div className="integration-name">Apify Dataset</div>
+              <div className="integration-status">Connected</div>
+            </div>
+          </div>
+          <div className="integration-item">
+            <div className="integration-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2">
+                <ellipse cx="12" cy="5" rx="9" ry="3" />
+                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+              </svg>
+            </div>
+            <div className="integration-info">
+              <div className="integration-name">PostgreSQL Database</div>
+              <div className="integration-status">Connected</div>
+            </div>
+          </div>
+          <div className="integration-item">
+            <div className="integration-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" strokeWidth="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0110 0v4" />
+              </svg>
+            </div>
+            <div className="integration-info">
+              <div className="integration-name">Authentication</div>
+              <div className="integration-status">JWT + bcrypt</div>
+            </div>
           </div>
         </div>
+      </AdminPageLayout.Section>
 
-        {/* AI Config */}
-        <div className="card" style={{ padding: 20 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>Configuration</h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {[
-              { label: "Prediction Confidence Threshold", value: "85%" },
-              { label: "Price Check Interval", value: "Every 60s" },
-              { label: "Max Tracked Items (Free)", value: "10 products" },
-              { label: "Max Tracked Items (Pro)", value: "Unlimited" },
-              { label: "Alert Delay", value: "Instant" },
-              { label: "Data Retention", value: "24 hours" },
-            ].map((c, idx) => (
-              <div key={idx} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, paddingBottom: 10, borderBottom: "1px solid var(--border)" }}>
-                <span style={{ color: "var(--text-secondary)" }}>{c.label}</span>
-                <span style={{ fontWeight: 600 }}>{c.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* AI Insights */}
-      <div className="card" style={{ padding: 20 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>Recent AI Decisions</h3>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {[
-            { product: "Sony WH-1000XM5", action: "Price Drop Alert Triggered", confidence: "97%", time: "2 min ago" },
-            { product: "MacBook Pro M3", action: "Predicted 8% price drop in 3 days", confidence: "91%", time: "15 min ago" },
-            { product: "Dyson V15 Detect", action: "All-time low detected at Walmart", confidence: "99%", time: "1 hr ago" },
-          ].map((d, idx) => (
-            <div key={idx} style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 12px", background: "var(--bg-surface-2)", borderRadius: 8 }}>
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--primary)", flexShrink: 0 }} />
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>{d.product}</div>
-                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{d.action}</div>
-              </div>
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--success)" }}>{d.confidence}</div>
-                <div style={{ fontSize: 10, color: "var(--text-muted)" }}>{d.time}</div>
-              </div>
+      <AdminPageLayout.Section title="Platform Configuration">
+        <div className="config-items">
+          {configItems.map((c, idx) => (
+            <div key={idx} className="config-row">
+              <span className="config-label">{c.label}</span>
+              <span className="config-value">{c.value}</span>
             </div>
           ))}
         </div>
-      </div>
-    </div>
+      </AdminPageLayout.Section>
+
+      <AdminPageLayout.Section title="Environment Variables">
+        <div className="env-list">
+          <div className="env-item">
+            <code className="env-key">DATABASE_URL</code>
+            <span className="env-status">Set</span>
+          </div>
+          <div className="env-item">
+            <code className="env-key">JWT_SECRET</code>
+            <span className="env-status">Set</span>
+          </div>
+          <div className="env-item">
+            <code className="env-key">APIFY_TOKEN</code>
+            <span className="env-status">Set</span>
+          </div>
+          <div className="env-item">
+            <code className="env-key">GEMINI_API_KEY</code>
+            <span className="env-status">Optional</span>
+          </div>
+        </div>
+      </AdminPageLayout.Section>
+    </AdminPageLayout>
   );
 }

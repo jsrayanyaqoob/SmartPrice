@@ -9,21 +9,51 @@ export default function LiveComparison() {
     <section style={{ padding: "80px 0", background: "var(--bg-app)" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 64, alignItems: "center" }}>
-          {/* Product Image */}
+          {/* Product Image - Real product image */}
           <div style={{ display: "flex", justifyContent: "center" }}>
             <div
               style={{
                 width: 320,
                 height: 320,
                 borderRadius: 24,
-                background: "linear-gradient(135deg, #f3f4f6, #e5e7eb)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 80,
+                overflow: "hidden",
+                position: "relative",
+                boxShadow: "var(--shadow-lg)",
               }}
             >
-              🎧
+              <img
+                src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=600&auto=format&fit=crop"
+                alt="Sony WH-1000XM5"
+                loading="lazy"
+                decoding="async"
+                className="comparison-product-img"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
+              {/* Gradient overlay */}
+              <div style={{
+                position: "absolute",
+                inset: 0,
+                background: "linear-gradient(to top, rgba(0,0,0,0.2), transparent)",
+              }} />
+              {/* Price tag */}
+              <div style={{
+                position: "absolute",
+                bottom: 16,
+                left: 16,
+                background: "white",
+                padding: "6px 14px",
+                borderRadius: "var(--radius-full)",
+                fontWeight: 700,
+                fontSize: 14,
+                color: "var(--primary)",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+              }}>
+                From $249
+              </div>
             </div>
           </div>
 

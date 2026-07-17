@@ -1,67 +1,120 @@
 "use client";
+
+import { useState, useEffect } from "react";
+
 export default function DealsPage() {
-  const deals = [
-    { product: "Sony WH-1000XM5", original: "$399.00", current: "$298.00", discount: "25%", store: "Amazon", expiry: "2h 34m", hot: true },
-    { product: 'MacBook Pro 14" M3', original: "$1,999.00", current: "$1,549.00", discount: "22%", store: "Best Buy", expiry: "1d 4h", hot: true },
-    { product: "iPad Air M2", original: "$749.00", current: "$499.00", discount: "33%", store: "Amazon", expiry: "5h 12m", hot: false },
-    { product: "Dyson V15 Detect", original: "$749.00", current: "$549.00", discount: "26%", store: "Walmart", expiry: "3d 6h", hot: false },
-  ];
+  const [deals, setDeals] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDeals = async () => {
+      try {
+        const res = await fetch("/api/products");
+        if (res.ok) {
+          const data = await res.json();
+          const products = data.products || [];
+
+          const calculatedDeals = products
+            .filter((p) => p.price > 0)
+            .map((p) => {
+              const currentPrice = typeof p.price === "number" ? p.price : parseFloat(p.price) || 0;
+              const originalPrice = p.originalPrice
+                ? parseFloat(p.originalPrice.replace(/[^0-9.]/g, "")) || 0
+                : currentPrice * 1.3; // Estimate original as 30% higher if not available
+              const discount = originalPrice > 0 ? ((originalPrice - currentPrice) / originalPrice * 100).toFixed(0) : 0;
+
+              return {
+                product: p.title || p.name || "Product",
+                original: `$${originalPrice.toFixed(2)}`,
+                current: p.bestPrice || `$${currentPrice.toFixed(2)}`,
+                discount: `${discount}%`,
+                store: p.source || p.bestStore || "Online",
+                hot: parseInt(discount) >= 25,
+              };
+            })
+            .sort((a, b) => parseInt(b.discount) - parseInt(a.discount))
+            .slice(0, 20);
+
+          setDeals(calculatedDeals);
+        }
+      } catch (err) {
+        console.error("Failed to fetch deals:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDeals();
+  }, []);
+
+  const activeDeals = deals.length;
+  const hotDeals = deals.filter((d) => d.hot).length;
+  const avgDiscount = deals.length
+    ? (deals.reduce((sum, d) => sum + parseInt(d.discount), 0) / deals.length).toFixed(0)
+    : 0;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+    <div className="admin-page">
       <div>
-        <h2 style={{ fontSize: 28, fontWeight: 700, margin: "0 0 4px" }}>Deals Management</h2>
-        <p style={{ fontSize: 14, color: "var(--text-secondary)", margin: 0 }}>Monitor and manage AI-detected deal opportunities.</p>
+        <h2 className="admin-page-title">Deals Management</h2>
+        <p className="admin-page-subtitle">
+          View and monitor price drops and discounts from tracked products.
+        </p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
+      <div className="kpi-grid">
         {[
-          { label: "Active Deals", val: "24", color: "var(--success)" },
-          { label: "Hot Deals", val: "6", color: "var(--danger)" },
-          { label: "Expiring Soon", val: "3", color: "var(--warning)" },
-          { label: "Avg Discount", val: "27%", color: "var(--primary)" },
+          { label: "Active Deals", val: `${activeDeals}`, color: "var(--success)" },
+          { label: "Hot Deals (25%+)", val: `${hotDeals}`, color: "var(--danger)" },
+          { label: "Avg Discount", val: `${avgDiscount}%`, color: "var(--primary)" },
+          { label: "Products Tracked", val: `${deals.length}`, color: "var(--info)" },
         ].map((s, idx) => (
-          <div key={idx} className="card" style={{ padding: 16 }}>
-            <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600, marginBottom: 6 }}>{s.label}</div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: s.color }}>{s.val}</div>
+          <div key={idx} className={`card admin-fade-in-delay-${idx + 1}`} style={{ padding: 16 }}>
+            <div className="kpi-label">{s.label}</div>
+            <div className="kpi-value" style={{ color: s.color }}>{s.val}</div>
           </div>
         ))}
       </div>
 
       <div className="card" style={{ padding: 20 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>Active Deal Listings</h3>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ borderBottom: "1px solid var(--border)", fontSize: 11, color: "var(--text-muted)", textAlign: "left" }}>
-              <th style={{ paddingBottom: 10, fontWeight: 600 }}>PRODUCT</th>
-              <th style={{ paddingBottom: 10, fontWeight: 600 }}>ORIGINAL</th>
-              <th style={{ paddingBottom: 10, fontWeight: 600 }}>CURRENT</th>
-              <th style={{ paddingBottom: 10, fontWeight: 600 }}>DISCOUNT</th>
-              <th style={{ paddingBottom: 10, fontWeight: 600 }}>STORE</th>
-              <th style={{ paddingBottom: 10, fontWeight: 600 }}>EXPIRY</th>
-            </tr>
-          </thead>
-          <tbody>
-            {deals.map((d, idx) => (
-              <tr key={idx} style={{ borderBottom: "1px solid var(--border)", fontSize: 13 }}>
-                <td style={{ padding: "12px 0" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    {d.hot && <span className="badge badge-danger" style={{ fontSize: 7 }}>🔥 HOT</span>}
-                    <span style={{ fontWeight: 600 }}>{d.product}</span>
-                  </div>
-                </td>
-                <td style={{ padding: "12px 0", color: "var(--text-muted)", textDecoration: "line-through" }}>{d.original}</td>
-                <td style={{ padding: "12px 0", fontWeight: 700, color: "var(--success)" }}>{d.current}</td>
-                <td style={{ padding: "12px 0" }}>
-                  <span className="badge badge-success" style={{ fontSize: 9 }}>{d.discount} OFF</span>
-                </td>
-                <td style={{ padding: "12px 0", color: "var(--text-secondary)" }}>{d.store}</td>
-                <td style={{ padding: "12px 0", fontSize: 11, color: "var(--text-muted)" }}>{d.expiry}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <h3 className="card-title" style={{ marginBottom: 16 }}>Active Deal Listings</h3>
+        {loading ? (
+          <div className="table-empty">Loading deals...</div>
+        ) : deals.length === 0 ? (
+          <div className="table-empty">No deals found. Fetch products first.</div>
+        ) : (
+          <div className="table-responsive">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>PRODUCT</th>
+                  <th>ORIGINAL</th>
+                  <th>CURRENT</th>
+                  <th>DISCOUNT</th>
+                  <th>STORE</th>
+                </tr>
+              </thead>
+              <tbody>
+                {deals.map((d, idx) => (
+                  <tr key={idx}>
+                    <td className="deal-product-cell">
+                      {d.hot && <span className="badge badge-danger" style={{ fontSize: 7, marginRight: 6 }}>HOT</span>}
+                      <span className="deal-product-name">{d.product}</span>
+                    </td>
+                    <td className="deal-original">{d.original}</td>
+                    <td className="deal-current">{d.current}</td>
+                    <td>
+                      <span className="badge badge-success" style={{ fontSize: 9 }}>{d.discount} OFF</span>
+                    </td>
+                    <td className="text-secondary">{d.store}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
+
+
     </div>
   );
 }

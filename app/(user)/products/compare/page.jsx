@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { ArrowLeft, Scale, Sparkles, Trash2 } from "lucide-react";
@@ -8,6 +9,7 @@ import { useCompareList } from "@/hooks/useCompareList";
 import { MAX_COMPARE_ITEMS } from "@/lib/compare";
 
 export default function ProductsComparePage() {
+  useEffect(() => { document.title = "Compare Products - SmartPrice"; document.querySelector('meta[name="description"]')?.setAttribute('content', 'Compare products side-by-side on SmartPrice. View live pricing, ratings, specs, and find the best deal across retailers.'); }, []);
   const { compareList, removeProduct, clearAll, updateList } = useCompareList();
 
   const onDragEnd = (result) => {
@@ -144,6 +146,8 @@ export default function ProductsComparePage() {
                               <img
                                 src={product.imageUrl}
                                 alt={product.title}
+                                loading="lazy"
+                                decoding="async"
                                 style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 6, marginBottom: 6 }}
                               />
                             ) : (

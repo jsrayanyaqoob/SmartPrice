@@ -1,7 +1,7 @@
 const reviews = [
-  { name: "Sarah M.", rating: 5, text: "SmartPrice saved me over $800 on my holiday shopping. The AI alerts are incredibly accurate!", plan: "Pro" },
-  { name: "James T.", rating: 5, text: "I've tried every price comparison tool out there. SmartPrice is leagues ahead with its predictive analytics.", plan: "Free" },
-  { name: "Maria L.", rating: 5, text: "The real-time tracking is a game changer. Got my MacBook Pro at its lowest price ever. Highly recommend!", plan: "Pro" },
+  { name: "Sarah M.", rating: 5, text: "SmartPrice saved me over $800 on my holiday shopping. The AI alerts are incredibly accurate!", plan: "Pro", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&h=100&auto=format&fit=crop" },
+  { name: "James T.", rating: 5, text: "I've tried every price comparison tool out there. SmartPrice is leagues ahead with its predictive analytics.", plan: "Free", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=100&h=100&auto=format&fit=crop" },
+  { name: "Maria L.", rating: 5, text: "The real-time tracking is a game changer. Got my MacBook Pro at its lowest price ever. Highly recommend!", plan: "Pro", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=100&h=100&auto=format&fit=crop" },
 ];
 
 export default function Testimonials() {
@@ -36,16 +36,18 @@ export default function Testimonials() {
                     width: 40,
                     height: 40,
                     borderRadius: "50%",
-                    background: "var(--primary-light)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 700,
-                    color: "var(--primary)",
-                    fontSize: 15,
+                    overflow: "hidden",
+                    flexShrink: 0,
+                    border: "2px solid var(--primary-light)",
                   }}
                 >
-                  {review.name[0]}
+                  <img
+                    src={review.avatar}
+                    alt={review.name}
+                    loading="lazy"
+                    decoding="async"
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
                 </div>
                 <div>
                   <div style={{ fontWeight: 600, fontSize: 14 }}>{review.name}</div>

@@ -17,14 +17,34 @@ export default function AIFeatures() {
             <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.7, marginBottom: 20 }}>
               Our AI monitors over 50,000 stores every 60 seconds. When a price drops anywhere, you&apos;re the first to know.
             </p>
-            {/* Visual placeholder */}
-            <div style={{
-              height: 180, borderRadius: 12, 
-              background: "linear-gradient(135deg, var(--primary-light) 0%, #ddd6fe 100%)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 14, color: "var(--primary)", fontWeight: 600,
+            {/* Real image with CSS hover zoom */}
+            <div className="ai-feature-image" style={{
+              height: 180, borderRadius: 12, overflow: "hidden",
+              position: "relative",
             }}>
-              Track Smarter. Save Bigger.
+              <img
+                src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=600&auto=format&fit=crop"
+                alt="Real-time price tracking dashboard"
+                loading="lazy"
+                className="ai-feature-img"
+                style={{
+                  width: "100%", height: "100%", objectFit: "cover",
+                }}
+              />
+              <div style={{
+                position: "absolute",
+                inset: 0,
+                background: "linear-gradient(transparent 30%, rgba(107,51,246,0.3) 100%)",
+                display: "flex",
+                alignItems: "flex-end",
+                padding: 16,
+              }}>
+                <span style={{
+                  color: "white", fontWeight: 700, fontSize: 14,
+                }}>
+                  Track Smarter. Save Bigger.
+                </span>
+              </div>
             </div>
           </div>
 

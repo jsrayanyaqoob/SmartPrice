@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 const userNavItems = [
   {
@@ -68,12 +68,13 @@ const userNavItems = [
 
 export default function UserSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
 
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
       localStorage.removeItem("user");
-      window.location.href = "/login";
+      router.push("/login");
     } catch (error) {
       console.error("Logout failed:", error);
     }

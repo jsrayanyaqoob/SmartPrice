@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Sparkles, ArrowRight, Star, Store, Tag, ChevronLeft, ChevronRight, Scale } from "lucide-react";
+import { SkeletonProductCard } from "@/components/ui/Skeleton";
 import { useCompareList } from "@/hooks/useCompareList";
 import { MAX_COMPARE_ITEMS } from "@/lib/compare";
 
@@ -214,6 +215,7 @@ function ProductCarouselRow({ cat, items, scrollIndex, onScroll, renderProductCa
 }
 
 export default function ProductsPage() {
+  useEffect(() => { document.title = "Products - SmartPrice"; document.querySelector('meta[name="description"]')?.setAttribute('content', 'Browse live deals and products on SmartPrice. Compare prices across retailers, track price drops, and find the best value.'); }, []);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -376,6 +378,8 @@ export default function ProductsPage() {
           <img
             src={product.imageUrl || ""}
             alt={product.title}
+            loading="lazy"
+            decoding="async"
             style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
           <div style={{ position: "absolute", top: 10, left: 10, display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 999, background: "rgba(255,255,255,0.9)", color: "var(--foreground)", fontSize: 11, fontWeight: 700 }}>
@@ -479,8 +483,10 @@ export default function ProductsPage() {
       </div>
 
       {loading ? (
-        <div className="card" style={{ padding: 24, textAlign: "center", color: "var(--text-muted)" }}>
-          Loading products...
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <SkeletonProductCard key={i} />
+          ))}
         </div>
       ) : products.length === 0 ? (
         <div className="card" style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}>

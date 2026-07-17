@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { comparePassword, signToken } from "@/lib/auth";
+import { authLimiter } from "@/lib/rate-limit";
 
 export async function POST(request) {
   try {
+    // Rate limit login attempts
+    const rateLimitResponse = authLimiter.check(request);
+    if (rateLimitResponse) return rateLimitResponse;
+
     const { email, password } = await request.json();
 
     if (!email || !password) {
@@ -31,6 +36,9 @@ export async function POST(request) {
         { status: 401 }
       );
     }
+
+    // Reset rate limit on successful login
+    authLimiter.reset(request);
 
     // Sign the token
     const token = signToken({

@@ -89,6 +89,7 @@ function extractCategory(text) {
 }
 
 export default function AIAssistantPage() {
+  useEffect(() => { document.title = "AI Assistant - SmartPrice"; document.querySelector('meta[name="description"]')?.setAttribute('content', 'Chat with SmartPrice AI Budget Planner. Get personalized shopping strategies, product recommendations, and budget plans.'); }, []);
   const [messages, setMessages] = useState([
     {
       sender: "ai",
@@ -213,6 +214,7 @@ export default function AIAssistantPage() {
 
   return (
     <div
+      className="ai-assistant-wrapper"
       style={{
         display: "flex",
         justifyContent: "center",
@@ -222,7 +224,7 @@ export default function AIAssistantPage() {
     >
       {/* Centered Chat Window Container */}
       <div
-        className="card"
+        className="card ai-chat-card"
         style={{
           width: "100%",
           maxWidth: 540,
@@ -345,6 +347,8 @@ export default function AIAssistantPage() {
                           <img
                             src={p.imageUrl}
                             alt={p.title || p.name}
+                            loading="lazy"
+                            decoding="async"
                             style={{
                               width: 48,
                               height: 48,
@@ -515,6 +519,7 @@ export default function AIAssistantPage() {
 
       {/* Floating Star Widget on Bottom Right */}
       <div
+        className="ai-chat-floating-star"
         style={{
           position: "fixed",
           bottom: 30,

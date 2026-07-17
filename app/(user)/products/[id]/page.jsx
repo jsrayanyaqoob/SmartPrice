@@ -2,8 +2,10 @@
 
 import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Sparkles, ShieldCheck, Tag, ShoppingCart, TrendingUp, Store, Star, Scale } from "lucide-react";
+import { ArrowLeft, Sparkles, ShieldCheck, Tag, ShoppingCart, TrendingUp, Store, Star, Scale, Bell, Share2, Check } from "lucide-react";
 import { useCompareList } from "@/hooks/useCompareList";
+import AlertButton from "@/components/AlertButton";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 function normalizeValue(value) {
   return String(value ?? "")
@@ -33,8 +35,10 @@ function renderStars(rating) {
 }
 
 export default function ProductDetailPage({ params }) {
+  useEffect(() => { document.title = "Product Details - SmartPrice"; document.querySelector('meta[name="description"]')?.setAttribute('content', 'View detailed product information, compare prices across retailers, and set price alerts on SmartPrice.'); }, []);
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [shareCopied, setShareCopied] = useState(false);
   const { compareList, addProduct } = useCompareList();
 
   const resolvedParams = use(params);
@@ -98,8 +102,51 @@ export default function ProductDetailPage({ params }) {
 
   const rating = useMemo(() => getDisplayRating(product), [product]);
 
+  const handleShare = async () => {
+    const url = window.location.href;
+    const title = product?.title || "Check this product on SmartPrice";
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, url, text: `Check out ${title} on SmartPrice!` });
+      } catch {
+        // User cancelled or share failed — do nothing
+      }
+    } else if (navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(url);
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2000);
+      } catch {
+        // Clipboard write failed
+      }
+    }
+  };
+
   if (loading) {
-    return <div className="card" style={{ padding: 24, textAlign: "center", color: "var(--text-muted)" }}>Loading product details...</div>;
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+        <div className="card" style={{ padding: 24 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(260px, 360px) 1fr", gap: 24 }}>
+            <div>
+              <Skeleton height={280} borderRadius={18} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <Skeleton width={100} height={24} borderRadius={999} />
+              <Skeleton height={32} width="80%" />
+              <Skeleton height={18} width="50%" />
+              <Skeleton height={40} width="40%" />
+              <Skeleton height={80} />
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+                <Skeleton height={60} />
+                <Skeleton height={60} />
+                <Skeleton height={60} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!product) {
@@ -122,8 +169,8 @@ export default function ProductDetailPage({ params }) {
 
       <div className="card" style={{ padding: 24, display: "grid", gridTemplateColumns: "minmax(260px, 360px) 1fr", gap: 24, alignItems: "start" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div style={{ position: "relative", borderRadius: 18, overflow: "hidden", background: "var(--bg-surface-2)", minHeight: 280 }}>
-            <img src={product.imageUrl || ""} alt={product.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <div style={{ position: "relative", borderRadius: 18, overflow: "hidden", background: "var(--bg-surface-2)", minHeight: 280, aspectRatio: "3/4" }}>
+            <img src={product.imageUrl || ""} alt={product.title} loading="lazy" decoding="async" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             <div style={{ position: "absolute", top: 12, left: 12, display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 999, background: "rgba(255,255,255,0.9)", color: "var(--foreground)", fontSize: 12, fontWeight: 700 }}>
               <Sparkles size={12} /> Live deal
             </div>
@@ -174,7 +221,20 @@ export default function ProductDetailPage({ params }) {
             </div>
           </div>
 
+          {/* Share & Price Alert */}
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 6 }}>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={handleShare}
+              style={{ padding: "10px 14px", display: "inline-flex", alignItems: "center", gap: 6, transition: "all 0.15s" }}
+            >
+              {shareCopied ? (
+                <><Check size={14} style={{ color: "var(--success)" }} /> Link copied!</>
+              ) : (
+                <><Share2 size={14} /> Share</>
+              )}
+            </button>
             <button
               type="button"
               className={`btn ${compareList.some((item) => item.id === product.id) ? "btn-primary" : "btn-ghost"}`}
@@ -189,9 +249,7 @@ export default function ProductDetailPage({ params }) {
                 Open Compare ({compareList.length})
               </Link>
             )}
-            <button className="btn btn-ghost" style={{ padding: "10px 14px" }}>
-              Save to wishlist
-            </button>
+            <AlertButton productId={product.id} productName={product.title || product.name} />
           </div>
         </div>
       </div>

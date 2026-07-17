@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import AuthSplitLayout from "@/components/auth/AuthSplitLayout";
 
 export default function ForgotPasswordPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Forgot Password Request", email);
-    window.location.href = "/check-email";
+    router.push("/check-email");
   };
 
   const rightCard = (
@@ -25,7 +26,7 @@ export default function ForgotPasswordPage() {
   );
 
   return (
-    <AuthSplitLayout rightContent={rightCard}>
+    <AuthSplitLayout rightContent={rightCard} image="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?q=80&w=800&h=600&auto=format&fit=crop">
       <div style={{ maxWidth: 360, margin: "auto", width: "100%" }}>
         {/* Brand Header */}
         <Link

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState([]);
@@ -10,6 +10,7 @@ export default function UserManagementPage() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });
+  const searchTimeoutRef = useRef(null);
 
   const fetchUsers = useCallback(async (q = "") => {
     setLoading(true);
@@ -37,8 +38,8 @@ export default function UserManagementPage() {
   const handleSearch = (e) => {
     const val = e.target.value;
     setSearch(val);
-    const timeout = setTimeout(() => fetchUsers(val), 300);
-    return () => clearTimeout(timeout);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => fetchUsers(val), 300);
   };
 
   const handleUpdateRole = async (userId, newRole) => {
@@ -103,7 +104,7 @@ export default function UserManagementPage() {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: 24 }}>
       {/* Users List Table */}
-      <div className="card" style={{ padding: 20 }}>
+      <div className="card admin-fade-in" style={{ padding: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <div>
             <h3 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>Users</h3>
@@ -120,6 +121,23 @@ export default function UserManagementPage() {
               value={search}
               onChange={handleSearch}
             />
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => {
+                const esc = (s) => String(s || "").replace(/"/g, '""');
+                const csv = ["Name,Email,Role,Plan,Joined\n"].concat(
+                  users.map(u => `"${esc(u.name)}","${esc(u.email)}",${u.role},${u.plan},"${new Date(u.createdAt).toLocaleDateString()}"`)
+                ).join("\n");
+                const blob = new Blob([csv], { type: "text/csv" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url; a.download = "smartprice-users.csv"; a.click();
+                URL.revokeObjectURL(url);
+              }}
+              disabled={users.length === 0}
+            >
+              Export CSV
+            </button>
           </div>
         </div>
 
@@ -153,11 +171,10 @@ export default function UserManagementPage() {
           <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid var(--border)", fontSize: 11, color: "var(--text-muted)" }}>
-                <th style={{ paddingBottom: 10, fontWeight: 600 }}>USER</th>
-                <th style={{ paddingBottom: 10, fontWeight: 600 }}>ROLE</th>
+                <th style={{ paddingBottom: 10, fontWeight: 600 }}>USER</th>                  <th className="user-table-col-role" style={{ paddingBottom: 10, fontWeight: 600 }}>ROLE</th>
                 <th style={{ paddingBottom: 10, fontWeight: 600 }}>PLAN</th>
-                <th style={{ paddingBottom: 10, fontWeight: 600 }}>JOINED</th>
-                <th style={{ paddingBottom: 10, fontWeight: 600, textAlign: "right" }}>ALERTS</th>
+                <th className="user-table-col-joined" style={{ paddingBottom: 10, fontWeight: 600 }}>JOINED</th>
+                <th className="user-table-col-alerts" style={{ paddingBottom: 10, fontWeight: 600, textAlign: "right" }}>ALERTS</th>
               </tr>
             </thead>
             <tbody>
@@ -202,17 +219,14 @@ export default function UserManagementPage() {
                           <div style={{ fontSize: 10, color: "var(--text-muted)" }}>{u.email}</div>
                         </div>
                       </div>
-                    </td>
-                    <td style={{ padding: "12px 0" }}>
-                      <span
-                        className={
-                          u.role === "Admin" ? "badge badge-danger" : "badge badge-primary"
-                        }
-                        style={{ fontSize: 8 }}
-                      >
-                        {u.role}
-                      </span>
-                    </td>
+                    </td>                      <td className="user-table-col-role" style={{ padding: "12px 0" }}>
+                        <span
+                          className={u.role === "Admin" ? "badge badge-danger" : "badge badge-primary"}
+                          style={{ fontSize: 8 }}
+                        >
+                          {u.role}
+                        </span>
+                      </td>
                     <td style={{ padding: "12px 0" }}>
                       <span
                         className={u.plan === "PRO" ? "badge badge-pro" : "badge"}
@@ -221,10 +235,10 @@ export default function UserManagementPage() {
                         {u.plan}
                       </span>
                     </td>
-                    <td style={{ padding: "12px 0", color: "var(--text-secondary)" }}>
+                    <td className="user-table-col-joined" style={{ padding: "12px 0", color: "var(--text-secondary)" }}>
                       {formatDate(u.createdAt)}
                     </td>
-                    <td style={{ padding: "12px 0", textAlign: "right", color: "var(--text-muted)" }}>
+                    <td className="user-table-col-alerts" style={{ padding: "12px 0", textAlign: "right", color: "var(--text-muted)" }}>
                       🔔 {u._count?.priceAlerts || 0}
                     </td>
                   </tr>
@@ -236,7 +250,7 @@ export default function UserManagementPage() {
       </div>
 
       {/* User Detail Side Panel */}
-      <div className="card" style={{ padding: 20, display: "flex", flexDirection: "column", gap: 20 }}>
+      <div className="card admin-fade-in-delay-1" style={{ padding: 20, display: "flex", flexDirection: "column", gap: 20 }}>
         {selectedUser ? (
           <>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
