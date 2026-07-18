@@ -59,7 +59,6 @@ export default function ProductsComparePage() {
 
         {compareList.length === 0 ? (
           <div className="card" style={{ padding: 48, textAlign: "center", color: "var(--text-muted)" }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>⚔️</div>
             <h3 style={{ margin: "0 0 8px", color: "var(--text-primary)", fontWeight: 700 }}>No products to compare yet</h3>
             <p style={{ margin: "0 0 18px", fontSize: 13 }}>
               Go to the products page and click <strong>Compare</strong> on up to {MAX_COMPARE_ITEMS} items.

@@ -14,7 +14,6 @@ import {
 const faqCategories = [
   {
     title: "Getting Started",
-    icon: "🚀",
     questions: [
       {
         q: "What is SmartPrice?",
@@ -36,7 +35,6 @@ const faqCategories = [
   },
   {
     title: "Price Tracking & Alerts",
-    icon: "🔔",
     questions: [
       {
         q: "How do price alerts work?",
@@ -58,7 +56,6 @@ const faqCategories = [
   },
   {
     title: "AI Features",
-    icon: "🤖",
     questions: [
       {
         q: "How does the AI Budget Planner work?",
@@ -76,7 +73,6 @@ const faqCategories = [
   },
   {
     title: "Account & Settings",
-    icon: "⚙️",
     questions: [
       {
         q: "How do I change my password?",
@@ -98,7 +94,6 @@ const faqCategories = [
   },
   {
     title: "Billing & Pro Plan",
-    icon: "💎",
     questions: [
       {
         q: "What does the Pro plan include?",

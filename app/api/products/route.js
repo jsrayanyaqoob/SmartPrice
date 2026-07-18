@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 import { getProductsFromDb, ensureProducts } from "@/lib/product-sync";
 
 export async function GET(request) {
@@ -6,6 +7,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("q") || "";
     const category = searchParams.get("category") || "";
+    const productId = searchParams.get("id") || "";
     const limit = parseInt(searchParams.get("limit") || "50", 10);
     const offset = parseInt(searchParams.get("offset") || "0", 10);
 
@@ -15,7 +17,57 @@ export async function GET(request) {
       console.warn("Initial sync failed, serving from cache if available");
     }
 
-    // Fetch from database
+    // If fetching a single product by ID (externalId or slug)
+    if (productId) {
+      const product = await prisma.product.findFirst({
+        where: {
+          OR: [
+            { externalId: productId },
+            { slug: productId },
+          ],
+        },
+        include: {
+          productPrices: {
+            orderBy: { scrapedAt: "desc" },
+            take: 30,
+          },
+        },
+      });
+
+      if (!product) {
+        return NextResponse.json({ product: null, error: "Product not found" }, { status: 404 });
+      }
+
+      const bestPrice = product.productPrices?.length > 0
+        ? Math.min(...product.productPrices.map((pp) => pp.price))
+        : product.price;
+
+      return NextResponse.json({
+        product: {
+          id: product.externalId || product.slug,
+          dbId: product.id,
+          title: product.title,
+          name: product.name,
+          brand: product.brand,
+          category: product.category,
+          description: product.description,
+          imageUrl: product.imageUrl,
+          price: product.price,
+          bestPrice: `$${bestPrice.toFixed(2)}`,
+          retailers: product.productPrices?.length || 1,
+          currency: product.currency,
+          rating: product.rating,
+          priceEntries: product.productPrices?.map((pp) => ({
+            store: { name: pp.storeName },
+            price: pp.price,
+            scrapedAt: pp.scrapedAt,
+            storeUrl: pp.storeUrl,
+          })) || [],
+        },
+      });
+    }
+
+    // Fetch from database (listing)
     const { products, total } = await getProductsFromDb({
       query,
       category,
@@ -45,6 +97,7 @@ export async function GET(request) {
         priceEntries: p.productPrices?.map((pp) => ({
           store: { name: pp.storeName },
           price: pp.price,
+          scrapedAt: pp.scrapedAt,
         })) || [],
       };
     });

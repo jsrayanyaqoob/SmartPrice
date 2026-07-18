@@ -261,7 +261,7 @@ export default function AIAssistantPage() {
                 fontSize: 18,
               }}
             >
-              🤖
+              <Sparkles size={18} />
             </div>
             <div>
               <div style={{ fontWeight: 700, fontSize: 13 }}>SmartPrice AI Assistant</div>
@@ -411,7 +411,7 @@ export default function AIAssistantPage() {
                 }}
               >
                 <span className="animate-fade-up" style={{ animationDuration: "0.8s", animationIterationCount: "infinite" }}>
-                  💬
+                  
                 </span>
                 AI is analyzing products and crafting your plan...
               </div>

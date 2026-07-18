@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const footerLinks = {
   Product: [
@@ -66,6 +66,11 @@ const socialLinks = [
 export default function Footer() {
   const [footerEmail, setFooterEmail] = useState("");
   const [footerSubscribed, setFooterSubscribed] = useState(false);
+  const [currentYear, setCurrentYear] = useState(null);
+
+  useEffect(() => {
+    setCurrentYear(new Date().getFullYear());
+  }, []);
 
   const handleFooterSubmit = (e) => {
     e.preventDefault();
@@ -252,7 +257,7 @@ export default function Footer() {
           }}
         >
           <p style={{ color: "#6b7280", fontSize: 13, margin: 0 }}>
-            © {new Date().getFullYear()} SmartPrice. All rights reserved.
+            © {currentYear || new Date().getFullYear()} SmartPrice. All rights reserved.
           </p>
           <div style={{ display: "flex", gap: 20 }}>
             {["Privacy", "Terms", "Cookies"].map((item) => (

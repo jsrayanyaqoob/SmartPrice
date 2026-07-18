@@ -614,7 +614,7 @@ export default function UserDashboard() {
           {/* Budget AI Planner */}
           <div className="card" style={{ padding: 18 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-              <span>🤖</span>
+              <BrainCircuit size={18} style={{ color: "var(--primary)" }} />
               <h4 style={{ fontSize: 14, fontWeight: 600, margin: 0 }}>Budget AI Planner</h4>
             </div>
             <form onSubmit={handleGenerateStrategy} style={{ display: "flex", flexDirection: "column", gap: 12 }}>

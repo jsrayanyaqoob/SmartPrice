@@ -92,6 +92,12 @@ export default function RootLayout({ children }) {
       <head>
         <link rel="preconnect" href="https://images.unsplash.com" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
+        {/* Prevent Flash of Wrong Theme — runs before React hydrates */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("smartprice-theme");var p=window.matchMedia("(prefers-color-scheme: dark)").matches;if(t==="dark"||(!t&&p)){document.documentElement.classList.add("dark")}}catch(e){}})();`,
+          }}
+        />
       </head>
       <body className="antialiased" suppressHydrationWarning>
         <ThemeProvider>
