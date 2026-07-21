@@ -385,7 +385,7 @@ body { margin: 0; font-family: "Inter", system-ui, sans-serif; background-color:
 .divider-text::after { content: ""; flex: 1; height: 1px; background: var(--border); }
 
 /* ===== Page transition fade ===== */
-@keyframes pageFadeOut { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pageFadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* ===== Admin Switch button inner ===== */
 .admin-switch-icon { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }

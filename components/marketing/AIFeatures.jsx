@@ -10,8 +10,8 @@ export default function AIFeatures() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, textAlign: "left" }}>
           {/* Real-time Price Engine */}
           <div className="card" style={{ padding: 28, gridRow: "span 2" }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: "var(--primary-light)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: "var(--primary-light)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16, fontSize: 20, fontWeight: 700, color: "var(--primary)" }}>
+              📊
             </div>
             <h3 className="heading-3" style={{ marginBottom: 8 }}>Real-time Price Engine</h3>
             <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.7, marginBottom: 20 }}>
@@ -50,10 +50,8 @@ export default function AIFeatures() {
 
           {/* Predictive Analytics */}
           <div className="card" style={{ padding: 28 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: "#dbeafe", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--brand-blue)" strokeWidth="2">
-                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-              </svg>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: "#dbeafe", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16, fontSize: 20, fontWeight: 700, color: "var(--brand-blue)" }}>
+              📈
             </div>
             <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>Predictive Analytics</h3>
             <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.7 }}>
@@ -66,11 +64,8 @@ export default function AIFeatures() {
             padding: 28, background: "var(--brand-gradient)", color: "white",
             position: "relative", overflow: "hidden",
           }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 01-3.46 0" />
-              </svg>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16, fontSize: 20, fontWeight: 700 }}>
+              🔔
             </div>
             <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>Smart Alerts</h3>
             <p style={{ fontSize: 13, opacity: 0.9, lineHeight: 1.7 }}>

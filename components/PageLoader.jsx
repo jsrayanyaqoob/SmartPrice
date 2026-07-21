@@ -34,7 +34,7 @@ export default function PageLoader() {
         inset: 0,
         zIndex: 9999,
         pointerEvents: "none",
-        animation: "pageFadeOut 0.2s ease forwards",
+        animation: "pageFadeIn 0.2s ease forwards",
       }}
     />
   );
