@@ -191,7 +191,7 @@ export default function WishlistPage() {
           </div>
         ) : wishlist.length === 0 ? (
           <div className="card" style={{ padding: 40, textAlign: "center", border: "2px dashed var(--border)" }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>❤️</div>
+           
             <h3 style={{ fontSize: 18, fontWeight: 600, margin: "0 0 6px" }}>Your wishlist is empty</h3>
             <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "0 0 20px" }}>
               Start adding products you want to track and we'll notify you when prices drop.

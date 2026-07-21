@@ -239,7 +239,7 @@ export default function UserManagementPage() {
                       {formatDate(u.createdAt)}
                     </td>
                     <td className="user-table-col-alerts" style={{ padding: "12px 0", textAlign: "right", color: "var(--text-muted)" }}>
-                      🔔 {u._count?.priceAlerts || 0}
+                      {u._count?.priceAlerts || 0}
                     </td>
                   </tr>
                 ))

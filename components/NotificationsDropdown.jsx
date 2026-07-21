@@ -7,7 +7,6 @@ const typeIcons = {
   price_drop: "📉",
   tip: "💡",
   welcome: "👋",
-  default: "🔔",
 };
 
 export default function NotificationsDropdown() {

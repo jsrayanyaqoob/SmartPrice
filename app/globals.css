@@ -490,3 +490,12 @@ body { margin: 0; font-family: "Inter", system-ui, sans-serif; background-color:
 .sidebar-nav-item:active {
   transform: scale(0.97);
 }
+
+/* Notification delete button hover */
+.notif-delete-btn {
+  opacity: 0.4;
+}
+.notif-delete-btn:hover {
+  opacity: 1;
+  color: var(--danger);
+}

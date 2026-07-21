@@ -239,7 +239,7 @@ export default function PriceAlertsPage() {
           </div>
         ) : alerts.length === 0 ? (
           <div className="card" style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>🔔</div>
+          
             <h3 style={{ margin: "0 0 6px", color: "var(--text-primary)", fontWeight: 700 }}>No alerts yet</h3>
             <p style={{ margin: 0, fontSize: 13 }}>
               Set your first price alert to start tracking deals.
