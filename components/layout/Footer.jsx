@@ -102,22 +102,7 @@ export default function Footer() {
           {/* Brand Column - Now with Newsletter */}
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-              <div
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 8,
-                  background: "var(--brand-gradient)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="white" />
-                </svg>
-              </div>
-              <span style={{ fontWeight: 700, fontSize: 18, color: "white" }}>SmartPrice</span>
+              <span style={{ fontWeight: 800, fontSize: 20, color: "white", letterSpacing: "-0.02em" }}>SmartPrice</span>
             </div>
             <p style={{ color: "#9ca3af", fontSize: 14, lineHeight: 1.7, maxWidth: 280, marginBottom: 20 }}>
               AI-powered price comparison and tracking. Save more, shop smarter.

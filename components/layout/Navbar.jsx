@@ -32,34 +32,12 @@ export default function Navbar() {
               flexShrink: 0,
             }}
           >
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 8,
-                background: "var(--brand-gradient)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  fill="white"
-                />
-              </svg>
-            </div>
             <span
               style={{
-                fontWeight: 700,
-                fontSize: 18,
+                fontWeight: 800,
+                fontSize: 20,
                 color: "var(--primary)",
-                letterSpacing: "-0.02em",
+                letterSpacing: "-0.03em",
               }}
             >
               SmartPrice

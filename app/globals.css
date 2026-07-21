@@ -384,9 +384,8 @@ body { margin: 0; font-family: "Inter", system-ui, sans-serif; background-color:
 .divider-text::before,
 .divider-text::after { content: ""; flex: 1; height: 1px; background: var(--border); }
 
-/* ===== Page loader ===== */
-.page-loader-bar { position: fixed; top: 0; left: 0; width: 100%; height: 3px; background: var(--brand-gradient); z-index: 99999; transform-origin: left; animation: loader-bar 1.5s ease-in-out infinite; }
-@keyframes loader-bar { 0% { transform: scaleX(0); opacity: 1; } 50% { transform: scaleX(0.8); opacity: 0.8; } 100% { transform: scaleX(1); opacity: 0; } }
+/* ===== Page transition fade ===== */
+@keyframes pageFadeOut { from { opacity: 0; } to { opacity: 1; } }
 
 /* ===== Admin Switch button inner ===== */
 .admin-switch-icon { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }

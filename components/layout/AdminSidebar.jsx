@@ -267,24 +267,8 @@ export default function AdminSidebar() {
           href="/admin"
           style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}
         >
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              background: "var(--brand-gradient)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="white" />
-            </svg>
-          </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 14, color: "var(--primary)", lineHeight: 1.2 }}>
+            <div style={{ fontWeight: 800, fontSize: 18, color: "var(--primary)", lineHeight: 1.2, letterSpacing: "-0.02em" }}>
               SmartPrice
             </div>
             <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 500 }}>
