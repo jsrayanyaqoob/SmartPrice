@@ -40,6 +40,9 @@ export async function GET() {
     });
   } catch (error) {
     console.error("External products fetch error:", error);
-    return NextResponse.json({ products: [], error: error.message || "Failed to fetch external products" }, { status: 500 });
+    return NextResponse.json({ 
+      products: [], 
+      error: process.env.NODE_ENV !== "production" ? error.message : "Failed to fetch external products" 
+    }, { status: 500 });
   }
 }

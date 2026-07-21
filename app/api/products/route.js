@@ -111,6 +111,10 @@ export async function GET(request) {
     });
   } catch (error) {
     console.error("Fetch products error:", error);
-    return NextResponse.json({ products: [], total: 0, error: error.message || "Failed to fetch products" }, { status: 500 });
+    return NextResponse.json({ 
+      products: [], 
+      total: 0, 
+      error: process.env.NODE_ENV !== "production" ? error.message : "Failed to fetch products" 
+    }, { status: 500 });
   }
 }
