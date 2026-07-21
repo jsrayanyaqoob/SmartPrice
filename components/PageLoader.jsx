@@ -35,7 +35,7 @@ export default function PageLoader() {
         zIndex: 9999,
         pointerEvents: "none",
         background: "var(--bg-app)",
-        animation: "pageFadeIn 0.15s ease forwards",
+        animation: "pageFadeIn 0.15s ease reverse forwards",
       }}
     />
   );
